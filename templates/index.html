@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block extra_style %}
+.hero {
+  text-align: center;
+  padding: 5rem 0 4rem;
+}
+.hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3rem, 8vw, 7rem);
+  letter-spacing: 6px;
+  line-height: 1;
+  color: var(--accent);
+  margin-bottom: 1.2rem;
+}
+.hero-sub {
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 300;
+  letter-spacing: 2px;
+  margin-bottom: 2.5rem;
+}
+.btn {
+  display: inline-block;
+  padding: 0.8rem 2.2rem;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  transition: background 0.2s, color 0.2s;
+  margin: 0 0.4rem;
+}
+.btn:hover { background: var(--accent); color: var(--bg); }
+.btn.filled { background: var(--accent); color: var(--bg); }
+.btn.filled:hover { background: transparent; color: var(--accent); }
+.divider {
+  width: 60px; height: 1px;
+  background: var(--border);
+  margin: 4rem auto;
+}
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+.feature-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2rem;
+}
+.feature-icon { font-size: 2rem; margin-bottom: 1rem; }
+.feature-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 2px;
+  margin-bottom: 0.6rem;
+  color: var(--accent);
+}
+.feature-desc { color: var(--muted); font-size: 0.88rem; line-height: 1.7; }
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <div class="hero-title">MY THEATER</div>
+  <p class="hero-sub">영화를 발견하고 · 리뷰를 남기고 · 기억을 저장하세요</p>
+  <a href="/movies" class="btn filled">영화 둘러보기</a>
+  <a href="/review" class="btn">리뷰 작성하기</a>
+</div>
+
+<div class="divider"></div>
+
+<div class="features">
+  <div class="feature-card">
+    <div class="feature-icon">🎥</div>
+    <div class="feature-title">MOVIES</div>
+    <p class="feature-desc">다양한 장르의 영화 목록을 한눈에 확인하고 원하는 작품을 찾아보세요.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">✍️</div>
+    <div class="feature-title">REVIEW</div>
+    <p class="feature-desc">관람한 영화에 별점과 리뷰를 남겨 나만의 감상을 기록하세요.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">❤️</div>
+    <div class="feature-title">WISHLIST</div>
+    <p class="feature-desc">보고 싶은 영화를 저장하고 나만의 위시리스트를 만들어 보세요.</p>
+  </div>
+</div>
+{% endblock %}
