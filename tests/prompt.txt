@@ -1,0 +1,617 @@
+너는 넷플릭스에서 10년간 일한 개발자야 내가 만들고자 하는 프로그램의 요구사항을 줄테니 각 항목 별로 필요한 함수를 나열해
+
+1. 영화 목록 조회사용자는 다양한 영화 목록을 한눈에 볼 수 있어야 한다
+2. 영화 검색사용자는 영화 제목으로 원하는 영화를 검색할 수 있어야 한다
+3. 장르별 필터링사용자는 액션, 로맨스, 공포 등 장르별로 영화를 필터링할 수 있어야 한다
+4. 영화 상세 정보 조회사용자는 영화를 클릭하면 줄거리, 배우, 평점 등 상세 정보를 볼 수 있어야 한다
+5. 리뷰 작성사용자는 영화에 대한 리뷰와 별점을 작성할 수 있어야 한다
+6. 리뷰 조회사용자는 특정 영화에 달린 다른 리뷰들을 볼 수 있어야 한다
+7. 위시리스트 추가/삭제사용자는 보고 싶은 영화를 찜하고 위시리스트에서 관리할 수 있어야 한다
+8. 위시리스트 조회사용자는 찜한 영화 목록을 별도 페이지에서 한눈에 볼 수 있어야 한다
+9. 리뷰 삭제사용자는 자신이 작성한 리뷰를 삭제할 수 있어야 한다
+
+app.py를 함수 내용자체는 return으로만 남겨두고 동작할 수 있도록 작성해줘
+
+from flask import Flask, render_template, request, jsonify, redirect, url_for
+ 
+app = Flask(__name__)
+ 
+# ─────────────────────────────────────────
+#  페이지 라우트
+# ─────────────────────────────────────────
+ 
+@app.route("/")
+def index():
+    return render_template("index.html")
+ 
+@app.route("/movies")
+def movies():
+    return render_template("movies.html")
+ 
+@app.route("/movies/<int:movie_id>")
+def movie_detail(movie_id):
+    return render_template("detail.html")
+ 
+@app.route("/wishlist")
+def wishlist():
+    return render_template("wishlist.html")
+ 
+@app.route("/review")
+def review():
+    return render_template("review.html")
+ 
+# ─────────────────────────────────────────
+#  API 라우트
+# ─────────────────────────────────────────
+ 
+# UR-01 영화 목록 조회
+@app.route("/api/movies", methods=["GET"])
+def get_movies():
+    return jsonify([])
+ 
+# UR-02 영화 검색
+@app.route("/api/movies/search", methods=["GET"])
+def search_movies():
+    return jsonify([])
+ 
+# UR-03 장르별 필터링
+@app.route("/api/movies/filter", methods=["GET"])
+def filter_by_genre():
+    return jsonify([])
+ 
+# UR-04 영화 상세 정보 조회
+@app.route("/api/movies/<int:movie_id>", methods=["GET"])
+def get_movie_detail(movie_id):
+    return jsonify({})
+ 
+# UR-05 리뷰 작성
+@app.route("/api/reviews", methods=["POST"])
+def create_review():
+    return jsonify({})
+ 
+# UR-06 리뷰 조회
+@app.route("/api/reviews/<int:movie_id>", methods=["GET"])
+def get_reviews(movie_id):
+    return jsonify([])
+ 
+# UR-07 위시리스트 추가
+@app.route("/api/wishlist", methods=["POST"])
+def add_wishlist():
+    return jsonify({})
+ 
+# UR-07 위시리스트 삭제
+@app.route("/api/wishlist/<int:movie_id>", methods=["DELETE"])
+def remove_wishlist(movie_id):
+    return jsonify({})
+ 
+# UR-08 위시리스트 조회
+@app.route("/api/wishlist", methods=["GET"])
+def get_wishlist():
+    return jsonify([])
+ 
+# UR-09 리뷰 삭제
+@app.route("/api/reviews/<int:review_id>", methods=["DELETE"])
+def delete_review(review_id):
+    return jsonify({})
+ 
+ 
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5001, debug=True)
+
+위의 케이스를 기반으로 각 함수별로 tdd 기반 test unit을 만들건데 그에 맞게 edge케이스들에 대한 code red 를 각 함수별로 5개씩 나열해줘
+
+위의 케이스를 바탕으로 먼저 get_movies() 에 대한 test 함수를 작성해줘
+
+    def test_invalid_page_type_returns_400(client):
+        """파라미터 타입 오류: page=abc 전송 시 400 반환"""
+        res = client.get("/api/movies?page=abc&limit=10")
+>       assert res.status_code == 400
+E       assert 200 == 400
+E        +  where 200 = <WrapperTestResponse streamed [200 OK]>.status_code
+
+tests/test_get_movies.py:16: AssertionError
+
+
+args = (), keywargs = {'client': <FlaskClient <Flask 'app'>>}
+
+    @wraps(func)
+    def patched(*args, **keywargs):
+>       with self.decoration_helper(patched,
+                                    args,
+                                    keywargs) as (newargs, newkeywargs):
+
+ def test_out_of_range_page_returns_empty(client):
+        """페이지 범위 초과: page=9999 요청 시 200 OK와 빈 리스트 반환"""
+        res = client.get("/api/movies?page=9999")
+>       assert res.status_code in (200, 404)
+E       assert 500 in (200, 404)
+E        +  where 500 = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.status_code
+
+   def test_empty_database_returns_empty_list(client):
+        """빈 DB: 200 OK와 [] 반환 (Null Reference 없음)"""
+        res = client.get("/api/movies")
+>       assert res.status_code == 200
+E       assert 500 == 200
+E        +  where 500 = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.status_code
+
+tests/test_get_movies.py:46: AssertionError
+
+
+==================================================================================== ERRORS ====================================================================================
+__________________________________________________________________ ERROR collecting tests/test_get_movies.py ___________________________________________________________________
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/_pytest/python.py:507: in importtestmodule
+    mod = import_path(
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/_pytest/pathlib.py:587: in import_path
+    importlib.import_module(module_name)
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1398: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1342: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:938: in _load_unlocked
+    ???
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/_pytest/assertion/rewrite.py:197: in exec_module
+    exec(co, module.__dict__)
+tests/test_get_movies.py:4: in <module>
+    from app import app
+E     File "/Users/jinookang/web-service/app.py", line 35
+E       from flask import Flask, request, jsonify
+E       ^^^^
+E   SyntaxError: invalid syntax
+=========================================================================== short test summary info ============================================================================
+ERROR tests/test_get_movies.py
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+=============================================================================== 1 error in 0.08s ===============================================================================
+jinookang@Jinooui-MacBookPro web-service % 
+
+
+그 다음 함수 test를 세팅해줘
+
+    def test_get_movie_detail_success(client):
+        """정상 조회: 존재하는 ID 요청 시 200과 영화 정보 반환"""
+        res = client.get("/api/movies/1")
+        assert res.status_code == 200
+        data = json.loads(res.data)
+>       assert data["id"] == 1
+               ^^^^^^^^^^
+E       KeyError: 'id'
+
+self = <json.decoder.JSONDecoder object at 0x105a3b0e0>
+s = '<!doctype html>\n<html lang=en>\n<title>404 Not Found</title>\n<h1>Not Found</h1>\n<p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>\n'
+idx = 0
+
+    def raw_decode(self, s, idx=0):
+        """Decode a JSON document from ``s`` (a ``str`` beginning with
+        a JSON document) and return a 2-tuple of the Python
+        representation and the index in ``s`` where the document ended.
+    
+        This can be used to decode a JSON document from a string that may
+        have extraneous data at the end.
+    
+        """
+        try:
+            obj, end = self.scan_once(s, idx)
+        except StopIteration as err:
+>           raise JSONDecodeError("Expecting value", s, err.value) from None
+E           json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py:363: JSONDecodeError
+
+client = <FlaskClient <Flask 'app'>>
+
+    def test_get_movie_detail_structure(client):
+        """데이터 구조 검증: 필수 키값이 모두 포함되어 있는지 확인"""
+        res = client.get("/api/movies/1")
+        data = json.loads(res.data)
+        required_keys = ["id", "title", "description", "rating"]
+        for key in required_keys:
+>           assert key in data
+
+를 바탕으로 @app.route("/api/movies/<int:movie_id>", methods=["GET"])
+def get_movie_detail(movie_id):
+    return jsonify({})를 수정해줘
+
+client = <FlaskClient <Flask 'app'>>
+
+    def test_get_movie_detail_structure(client):
+        """데이터 구조 검증: 필수 키값이 모두 포함되어 있는지 확인"""
+        res = client.get("/api/movies/1")
+        data = json.loads(res.data)
+        required_keys = ["id", "title", "description", "rating"]
+        for key in required_keys:
+>           assert key in data
+E           AssertionError: assert 'description' in {'id': 1, 'title': 'Movie 1'}
+
+tests/test_get_movie_detail.py:45: AssertionError
+
+self = <unittest.mock._patch object at 0x10296ea50>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+
+mock_db = <MagicMock name='get_movies_from_db' id='4390564736'>, client = <FlaskClient <Flask 'app'>>
+
+    @patch("app.get_movies_from_db")
+    def test_get_movie_detail_db_error(mock_db, client):
+        """서버 에러: DB 조회 중 예외 발생 시 500 반환"""
+        mock_db.side_effect = Exception("Database connection failed")
+        res = client.get("/api/movies/1")
+>       assert res.status_code == 500
+E       assert 200 == 500
+E        +  where 200 = <WrapperTestResponse streamed [200 OK]>.status_code
+
+tests/test_get_movie_detail.py:37: AssertionError
+
+그 다음 함수 테스트 세팅해줘
+
+client = <FlaskClient <Flask 'app'>>
+
+    def test_search_movies_success(client):
+        """정상 검색: 'Movie 1' 검색 시 해당 영화가 포함된 리스트 반환"""
+        res = client.get("/api/movies/search?q=Movie 1")
+        assert res.status_code == 200
+        data = json.loads(res.data)
+>       assert len(data) > 0
+E       assert 0 > 0
+E        +  where 0 = len([])
+
+tests/test_search_movies.py:19: AssertionError
+
+mock_search = <MagicMock name='search_movies_from_db' id='4418272432'>, client = <FlaskClient <Flask 'app'>>
+
+    @patch("app.search_movies_from_db")
+    def test_search_db_error_returns_500(mock_search, client):
+        """서버 에러: 검색 로직 중 예외 발생 시 500 반환"""
+        mock_search.side_effect = Exception("Search engine failure")
+>       res = client.get("/api/movies/search?q=test")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_search_movies.py:44: 
+
+  def dispatch_request(self) -> ft.ResponseReturnValue:
+        """Does the request dispatching.  Matches the URL and returns the
+        return value of the view or error handler.  This does not have to
+        be a response object.  In order to convert the return value to a
+        proper response object, call :func:`make_response`.
+    
+        .. versionchanged:: 0.7
+           This no longer does the exception handling, this code was
+           moved to the new :meth:`full_dispatch_request`.
+        """
+        req = request_ctx.request
+        if req.routing_exception is not None:
+            self.raise_routing_exception(req)
+        rule: Rule = req.url_rule  # type: ignore[assignment]
+        # if we provide automatic options for this URL and the
+        # request came with the OPTIONS method, reply automatically
+        if (
+            getattr(rule, "provide_automatic_options", False)
+            and req.method == "OPTIONS"
+        ):
+            return self.make_default_options_response()
+        # otherwise dispatch to the handler for that endpoint
+        view_args: dict[str, t.Any] = req.view_args  # type: ignore[assignment]
+>       return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: search_movies_from_db() missing 1 required positional argument: 'query'
+
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+# 1. 풍부한 테스트 데이터를 가진 가상 DB
+DATABASE = [
+    {
+        "id": i, 
+        "title": f"Movie {i}", 
+        "description": f"This is a detailed description for Movie {i}.", 
+        "rating": 4.5
+    } for i in range(1, 21)
+]
+
+# 2. 비즈니스 로직 함수 (테스트에서 @patch 하는 대상)
+def get_movies_from_db(movie_id_or_page, limit=None):
+    """
+    ID로 조회하거나 페이지네이션으로 조회하는 통합 DB 함수
+    """
+    if limit is None:  # 상세 조회 (ID 기반)
+        return next((m for m in DATABASE if m["id"] == movie_id_or_page), None)
+    
+    # 리스트 조회 (페이지네이션 기반)
+    start = (movie_id_or_page - 1) * limit
+    end = start + limit
+    return DATABASE[start:end]
+
+# 3. 영화 목록 조회 API (GET /api/movies)
+@app.route("/api/movies", methods=["GET"])
+def get_movies():
+    try:
+        page = int(request.args.get("page", "1"))
+        limit = int(request.args.get("limit", "10"))
+        
+        if page < 1 or limit < 1 or limit > 100:
+            return jsonify({"error": "Invalid range"}), 400
+            
+        movies = get_movies_from_db(page, limit)
+        return jsonify(movies), 200
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid parameter type"}), 400
+    except Exception as e:
+        return jsonify({"message": "Internal Server Error"}), 500
+
+# 4. 영화 상세 조회 API (GET /api/movies/<id>)
+@app.route("/api/movies/<int:movie_id>", methods=["GET"])
+def get_movie_detail(movie_id):
+    try:
+        # 테스트 코드의 @patch("app.get_movies_from_db")와 이름을 맞춤
+        movie = get_movies_from_db(movie_id)
+
+        if movie is None:
+            return jsonify({"error": "Movie not found"}), 404
+
+        return jsonify(movie), 200
+    except Exception as e:
+        # 이 부분이 실행되어야 테스트의 assert res.status_code == 500이 통과함
+        return jsonify({"message": "Internal Server Error"}), 500
+
+@app.route("/api/movies/search", methods=["GET"])
+# app.py
+
+# 1. 검색 로직을 담당하는 독립 함수 (테스트에서 이 함수를 가짜로 갈아끼움)
+def search_movies_from_db(query):
+    """제목에 검색어가 포함된 영화 필터링"""
+    if not query:
+        return []
+    query = query.lower()
+    return [m for m in DATABASE if query in m["title"].lower()]
+
+# 2. Flask 라우트 함수 (인자 없이 정의)
+@app.route("/api/movies/search", methods=["GET"])
+def search_movies():
+    """영화 검색 API 엔드포인트"""
+    try:
+        # URL 파라미터 ?q=... 에서 값을 가져옴
+        query = request.args.get("q", "").strip()
+
+        # [UR-02 Code Red] 검색어가 비어있으면 400 반환
+        if not query:
+            return jsonify({"error": "Search query is required"}), 400
+
+        # 3. 비즈니스 로직 함수에 꺼낸 값을 전달하여 호출
+        results = search_movies_from_db(query)
+
+        return jsonify(results), 200
+
+    except Exception as e:
+        # 예외 발생 시 500 반환 (테스트 통과 지점)
+        return jsonify({"message": "Internal Server Error"}), 500
+
+
+
+
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5001, debug=True)
+
+   @patch("app.search_movies_from_db")
+    def test_search_db_error_returns_500(mock_search, client):
+        """서버 에러: 검색 로직 중 예외 발생 시 500 반환"""
+        mock_search.side_effect = Exception("Search engine failure")
+>       res = client.get("/api/movies/search?q=test")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+# 1. 풍부한 테스트 데이터를 가진 가상 DB
+DATABASE = [
+    {
+        "id": i, 
+        "title": f"Movie {i}", 
+        "description": f"This is a detailed description for Movie {i}.", 
+        "rating": 4.5
+    } for i in range(1, 21)
+]
+
+# 2. 비즈니스 로직 함수 (테스트에서 @patch 하는 대상)
+def get_movies_from_db(movie_id_or_page, limit=None):
+    """
+    ID로 조회하거나 페이지네이션으로 조회하는 통합 DB 함수
+    """
+    if limit is None:  # 상세 조회 (ID 기반)
+        return next((m for m in DATABASE if m["id"] == movie_id_or_page), None)
+    
+    # 리스트 조회 (페이지네이션 기반)
+    start = (movie_id_or_page - 1) * limit
+    end = start + limit
+    return DATABASE[start:end]
+
+# 3. 영화 목록 조회 API (GET /api/movies)
+@app.route("/api/movies", methods=["GET"])
+def get_movies():
+    try:
+        page = int(request.args.get("page", "1"))
+        limit = int(request.args.get("limit", "10"))
+        
+        if page < 1 or limit < 1 or limit > 100:
+            return jsonify({"error": "Invalid range"}), 400
+            
+        movies = get_movies_from_db(page, limit)
+        return jsonify(movies), 200
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid parameter type"}), 400
+    except Exception as e:
+        return jsonify({"message": "Internal Server Error"}), 500
+
+# 4. 영화 상세 조회 API (GET /api/movies/<id>)
+@app.route("/api/movies/<int:movie_id>", methods=["GET"])
+def get_movie_detail(movie_id):
+    try:
+        # 테스트 코드의 @patch("app.get_movies_from_db")와 이름을 맞춤
+        movie = get_movies_from_db(movie_id)
+
+        if movie is None:
+            return jsonify({"error": "Movie not found"}), 404
+
+        return jsonify(movie), 200
+    except Exception as e:
+        # 이 부분이 실행되어야 테스트의 assert res.status_code == 500이 통과함
+        return jsonify({"message": "Internal Server Error"}), 500
+
+@app.route("/api/movies/search", methods=["GET"])
+# app.py
+
+# 1. 검색 로직을 담당하는 독립 함수 (테스트에서 이 함수를 가짜로 갈아끼움)
+def search_movies_from_db(query):
+    if not query:
+        return []
+    query = query.lower()
+    return [m for m in DATABASE if query in m["title"].lower()]
+
+# 2. API 라우트
+@app.route("/api/movies/search", methods=["GET"])
+def search_movies():
+    try:
+        query = request.args.get("q", "").strip()
+        if not query:
+            return jsonify({"error": "Search query is required"}), 400
+
+        # 여기서 위에서 정의한 함수를 호출
+        results = search_movies_from_db(query)
+        return jsonify(results), 200
+
+    except Exception as e:
+        # mock_search.side_effect가 던진 Exception을 여기서 잡아서 500을 리턴함
+        return jsonify({"message": "Internal Server Error"}), 500
+
+
+
+
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5001, debug=True)
+
+이걸 보고 왜 
+
+    def dispatch_request(self) -> ft.ResponseReturnValue:
+        """Does the request dispatching.  Matches the URL and returns the
+        return value of the view or error handler.  This does not have to
+        be a response object.  In order to convert the return value to a
+        proper response object, call :func:`make_response`.
+    
+        .. versionchanged:: 0.7
+           This no longer does the exception handling, this code was
+           moved to the new :meth:`full_dispatch_request`.
+        """
+        req = request_ctx.request
+        if req.routing_exception is not None:
+            self.raise_routing_exception(req)
+        rule: Rule = req.url_rule  # type: ignore[assignment]
+        # if we provide automatic options for this URL and the
+        # request came with the OPTIONS method, reply automatically
+        if (
+            getattr(rule, "provide_automatic_options", False)
+            and req.method == "OPTIONS"
+        ):
+            return self.make_default_options_response()
+        # otherwise dispatch to the handler for that endpoint
+        view_args: dict[str, t.Any] = req.view_args  # type: ignore[assignment]
+>       return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: search_movies_from_db() missing 1 required positional argument: 'query'
+
+오류가 나는지 고쳐줘
+
+ def test_search_movies_success(client):
+        """정상 검색: 'Movie 1' 검색 시 해당 영화가 포함된 리스트 반환"""
+        res = client.get("/api/movies/search?q=Movie 1")
+        assert res.status_code == 200
+        data = json.loads(res.data)
+        assert len(data) > 0
+>       assert "Movie 1" in data["title"]
+                            ^^^^^^^^^^^^^
+E       TypeError: list indices must be integers or slices, not str
+
+client = <FlaskClient <Flask 'app'>>
+
+    def test_search_movies_success(client):
+        """정상 검색: 'Movie 1' 검색 시 해당 영화가 포함된 리스트 반환"""
+        res = client.get("/api/movies/search?q=Movie 1")
+        assert res.status_code == 200
+    
+        data = json.loads(res.data)
+    
+        # 1. 결과가 리스트 형태인지 확인
+        assert isinstance(data, list)
+        assert len(data) > 0
+    
+        # 2. 리스트의 첫 번째 요소(딕셔너리)에서 title 키를 확인
+        # data["title"] (X) -> data["title"] (O)
+>       assert "Movie 1" in data["title"]
+                            ^^^^^^^^^^^^^
+E       TypeError: list indices must be integers or slices, not str
+
+다음 함수 test를 진행하자
+
+
+  def test_create_review_invalid_rating(client):
+        """범위 초과: 별점이 1~5 사이가 아닐 때 400 반환"""
+        payload = {
+            "movie_id": 1,
+            "content": "별점 10점 드립니다!",
+            "rating": 10  # 잘못된 범위
+        }
+        res = client.post("/api/reviews",
+                          data=json.dumps(payload),
+                          content_type='application/json')
+>       assert res.status_code == 400
+E       assert 404 == 400
+E        +  where 404 = <WrapperTestResponse streamed [404 NOT FOUND]>.status_code
+
+tests/test_create_review.py:48: AssertionError
+
+다음 함수 test를 해보자
+@app.route("/api/reviews/<int:movie_id>", methods=["GET"])
+def get_reviews(movie_id):
+    return jsonify([]) 로 할게
+
+    def test_get_movie_reviews_success(client):
+        """정상 조회: 1번 영화의 리뷰 2개가 정확히 반환되는지 확인"""
+        res = client.get("/api/movies/1/reviews")
+        assert res.status_code == 200
+        data = json.loads(res.data)
+        assert len(data) == 2
+>       assert data["movie_id"] == 1
+               ^^^^^^^^^^^^^^^^
+E       TypeError: list indices must be integers or slices, not str
+
+tests/test_get_movie_reviews.py:22: TypeError
+
+assert data[0]["movie_id"] == 1  # <---을 꼭 추가해 주세요!
+이렇게 수정해야해

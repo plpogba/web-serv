@@ -8,4 +8,4 @@ HTML CSS JavaScript TMDB API LocalStorage
 Home — 인기 영화 목록 조회 및 장르별 필터링, 검색
 Detail — 영화 상세 정보 및 리뷰 목록 조회
 Review — 별점 & 리뷰 작성 / 삭제
-Wishlist — 찜한 영화 목록 관리
+Wishlist — 찜한 영화 목록 관리함

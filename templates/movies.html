@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block extra_style %}
+.page-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.8rem;
+  letter-spacing: 4px;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+.page-sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 2.5rem; }
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+.movie-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.8rem;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.movie-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+.movie-genre {
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+.movie-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 2px;
+  margin-bottom: 0.3rem;
+}
+.movie-year { color: var(--muted); font-size: 0.82rem; margin-bottom: 1rem; }
+.movie-rating { display: flex; align-items: center; gap: 0.4rem; }
+.stars { color: var(--accent); font-size: 0.9rem; }
+.rating-num { font-size: 0.85rem; color: var(--muted); }
+.wishlist-btn {
+  margin-top: 1.2rem;
+  display: block;
+  width: 100%;
+  padding: 0.6rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.wishlist-btn:hover { border-color: var(--accent); color: var(--accent); }
+{% endblock %}
+
+{% block content %}
+<div class="page-title">MOVIES</div>
+<p class="page-sub">총 {{ movies|length }}편의 영화</p>
+
+<div class="movie-grid">
+  {% for movie in movies %}
+  <div class="movie-card">
+    <div class="movie-genre">{{ movie.genre }}</div>
+    <div class="movie-title">{{ movie.title }}</div>
+    <div class="movie-year">{{ movie.year }}</div>
+    <div class="movie-rating">
+      <span class="stars">
+        {% for i in range(movie.rating | int) %}★{% endfor %}{% if movie.rating % 1 >= 0.5 %}☆{% endif %}
+      </span>
+      <span class="rating-num">{{ movie.rating }} / 5.0</span>
+    </div>
+    <button class="wishlist-btn" onclick="this.textContent = this.textContent === '❤️ 위시리스트 추가' ? '✅ 저장됨' : '❤️ 위시리스트 추가'">
+      ❤️ 위시리스트 추가
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
