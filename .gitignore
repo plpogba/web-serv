@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/macos,python,xcode
-# Edit at https://www.toptal.com/developers/gitignore?templates=macos,python,xcode
+# Created by https://www.toptal.com/developers/gitignore/api/macos,python,visualstudiocode
+# Edit at https://www.toptal.com/developers/gitignore?templates=macos,python,visualstudiocode
 
 ### macOS ###
 # General
@@ -206,21 +206,23 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
-### Xcode ###
-## User settings
-xcuserdata/
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
 
-## Xcode 8 and earlier
-*.xcscmblueprint
-*.xccheckout
+# Local History for Visual Studio Code
+.history/
 
-### Xcode Patch ###
-*.xcodeproj/*
-!*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcshareddata/
-!*.xcodeproj/project.xcworkspace/
-!*.xcworkspace/contents.xcworkspacedata
-/*.gcno
-**/xcshareddata/WorkspaceSettings.xcsettings
+# Built Visual Studio Code Extensions
+*.vsix
 
-# End of https://www.toptal.com/developers/gitignore/api/macos,python,xcode
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+# End of https://www.toptal.com/developers/gitignore/api/macos,python,visualstudiocode
