@@ -1,90 +1,141 @@
 {% extends "base.html" %}
+{% block title %}CineReview — 홈{% endblock %}
 
 {% block extra_style %}
 .hero {
-  text-align: center;
-  padding: 5rem 0 4rem;
+  position: relative; min-height: 70vh; display: flex; align-items: flex-end;
+  padding: 3rem 0 2rem; margin-bottom: 3rem; overflow: hidden;
 }
-.hero-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(3rem, 8vw, 7rem);
-  letter-spacing: 6px;
-  line-height: 1;
-  color: var(--accent);
-  margin-bottom: 1.2rem;
+.hero-backdrop {
+  position: absolute; inset: 0; background-size: cover; background-position: center top;
+  filter: brightness(0.35); z-index: 0;
+  transition: opacity 0.8s;
 }
-.hero-sub {
-  color: var(--muted);
-  font-size: 1rem;
-  font-weight: 300;
-  letter-spacing: 2px;
-  margin-bottom: 2.5rem;
-}
-.btn {
-  display: inline-block;
-  padding: 0.8rem 2.2rem;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  text-decoration: none;
-  font-size: 0.85rem;
-  letter-spacing: 2px;
-  transition: background 0.2s, color 0.2s;
-  margin: 0 0.4rem;
-}
-.btn:hover { background: var(--accent); color: var(--bg); }
-.btn.filled { background: var(--accent); color: var(--bg); }
-.btn.filled:hover { background: transparent; color: var(--accent); }
-.divider {
-  width: 60px; height: 1px;
-  background: var(--border);
-  margin: 4rem auto;
-}
-.features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
-}
-.feature-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 2rem;
-}
-.feature-icon { font-size: 2rem; margin-bottom: 1rem; }
-.feature-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.3rem;
-  letter-spacing: 2px;
-  margin-bottom: 0.6rem;
-  color: var(--accent);
-}
-.feature-desc { color: var(--muted); font-size: 0.88rem; line-height: 1.7; }
+.hero-content { position: relative; z-index: 1; max-width: 600px; }
+.hero-label { font-size: 0.7rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 0.8rem; }
+.hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 6vw, 5rem); letter-spacing: 3px; line-height: 1; margin-bottom: 1rem; }
+.hero-overview { color: #aaa; font-size: 0.9rem; line-height: 1.7; margin-bottom: 1.5rem; max-width: 480px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.hero-meta { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.hero-rating { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--accent); }
+.hero-otts { display: flex; gap: 0.5rem; }
+.hero-actions { display: flex; gap: 0.8rem; }
+
+.section { margin-bottom: 3rem; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.see-all { font-size: 0.75rem; color: var(--muted); text-decoration: none; letter-spacing: 1px; transition: color 0.2s; }
+.see-all:hover { color: var(--accent); }
+
+.row-scroll { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem; }
+.row-scroll::-webkit-scrollbar { height: 3px; }
+.row-scroll::-webkit-scrollbar-track { background: var(--surface); }
+.row-scroll::-webkit-scrollbar-thumb { background: var(--border); }
+.row-scroll .card { flex: 0 0 150px; }
 {% endblock %}
 
 {% block content %}
-<div class="hero">
-  <div class="hero-title">MY THEATER</div>
-  <p class="hero-sub">영화를 발견하고 · 리뷰를 남기고 · 기억을 저장하세요</p>
-  <a href="/movies" class="btn filled">영화 둘러보기</a>
-  <a href="/review" class="btn">리뷰 작성하기</a>
-</div>
-
-<div class="divider"></div>
-
-<div class="features">
-  <div class="feature-card">
-    <div class="feature-icon">🎥</div>
-    <div class="feature-title">MOVIES</div>
-    <p class="feature-desc">다양한 장르의 영화 목록을 한눈에 확인하고 원하는 작품을 찾아보세요.</p>
-  </div>
-  <div class="feature-card">
-    <div class="feature-icon">✍️</div>
-    <div class="feature-title">REVIEW</div>
-    <p class="feature-desc">관람한 영화에 별점과 리뷰를 남겨 나만의 감상을 기록하세요.</p>
-  </div>
-  <div class="feature-card">
-    <div class="feature-icon">❤️</div>
-    <div class="feature-title">WISHLIST</div>
-    <p class="feature-desc">보고 싶은 영화를 저장하고 나만의 위시리스트를 만들어 보세요.</p>
+<!-- HERO -->
+<div class="hero" id="hero">
+  <div class="hero-backdrop" id="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-label">🔥 이번 주 트렌딩</div>
+    <div class="hero-title" id="hero-title">로딩 중...</div>
+    <div class="hero-overview" id="hero-overview"></div>
+    <div class="hero-meta">
+      <div class="hero-rating" id="hero-rating"></div>
+      <div class="hero-otts" id="hero-otts"></div>
+    </div>
+    <div class="hero-actions">
+      <a class="btn filled" id="hero-btn" href="#">상세 보기</a>
+    </div>
   </div>
 </div>
+
+<!-- 트렌딩 -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">TRENDING</div>
+    <a href="/browse" class="see-all">전체 보기 →</a>
+  </div>
+  <div class="row-scroll" id="trending-row">
+    <div class="loader">불러오는 중...</div>
+  </div>
+</div>
+
+<!-- OTT별 -->
+<div class="section">
+  <div class="section-title">OTT별 인기</div>
+  <div class="filter-bar" id="ott-tabs">
+    <button class="filter-chip active" data-ott="" onclick="loadOttSection(this, '')">전체</button>
+    <button class="filter-chip" data-ott="8"   onclick="loadOttSection(this, '8')">Netflix</button>
+    <button class="filter-chip" data-ott="97"  onclick="loadOttSection(this, '97')">Watcha</button>
+    <button class="filter-chip" data-ott="356" onclick="loadOttSection(this, '356')">Coupang Play</button>
+    <button class="filter-chip" data-ott="337" onclick="loadOttSection(this, '337')">Disney+</button>
+  </div>
+  <div class="row-scroll" id="ott-row">
+    <div class="loader">불러오는 중...</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let trendingData = [];
+
+async function loadTrending() {
+  const res = await fetch('/api/trending');
+  trendingData = await res.json();
+  if (!trendingData.length) return;
+
+  // Hero
+  const hero = trendingData[0];
+  document.getElementById('hero-bg').style.backgroundImage = `url(${hero.backdrop || hero.poster})`;
+  document.getElementById('hero-title').textContent = hero.title;
+  document.getElementById('hero-overview').textContent = hero.overview;
+  document.getElementById('hero-rating').textContent = '⭐ ' + hero.rating;
+  document.getElementById('hero-btn').href = `/content/${hero.media_type}/${hero.id}`;
+
+  // Trending row
+  const row = document.getElementById('trending-row');
+  row.innerHTML = trendingData.map(item => cardHTML(item)).join('');
+}
+
+async function loadOttSection(btn, ottId) {
+  document.querySelectorAll('#ott-tabs .filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const row = document.getElementById('ott-row');
+  row.innerHTML = '<div class="loader">불러오는 중...</div>';
+
+  const url = ottId
+    ? `/api/browse?type=movie&ott=${ottId}&page=1`
+    : `/api/browse?type=movie&page=1`;
+  const res  = await fetch(url);
+  const data = await res.json();
+
+  row.innerHTML = (data.results || []).slice(0, 15).map(item => cardHTML(item)).join('');
+}
+
+function cardHTML(item) {
+  const poster = item.poster
+    ? `<img src="${item.poster}" alt="${item.title}" loading="lazy">`
+    : `<div style="width:100%;aspect-ratio:2/3;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:2rem;">🎬</div>`;
+  const badge = item.media_type === 'tv'
+    ? `<span style="font-size:0.65rem;color:var(--muted);border:1px solid var(--border);padding:0.1rem 0.4rem;">TV</span>` : '';
+  return `
+    <div class="card" onclick="location.href='/content/${item.media_type}/${item.id}'">
+      ${poster}
+      <div class="card-body">
+        <div class="card-title">${item.title}</div>
+        <div class="card-meta">
+          <span class="card-rating">★ ${item.rating}</span>
+          ${badge}
+          <span>${(item.release||'').slice(0,4)}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+loadTrending();
+loadOttSection(document.querySelector('#ott-tabs .filter-chip'), '');
+</script>
 {% endblock %}

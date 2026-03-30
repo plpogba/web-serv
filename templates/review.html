@@ -1,137 +1,159 @@
 {% extends "base.html" %}
+{% block title %}리뷰 — CineReview{% endblock %}
 
 {% block extra_style %}
-.page-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.8rem;
-  letter-spacing: 4px;
-  color: var(--accent);
-  margin-bottom: 0.4rem;
-}
-.page-sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 2.5rem; }
-.review-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-@media (max-width: 700px) { .review-layout { grid-template-columns: 1fr; } }
-.form-card, .list-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 2rem;
-}
-.card-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.3rem;
-  letter-spacing: 2px;
-  color: var(--accent);
-  margin-bottom: 1.5rem;
-}
-label { display: block; font-size: 0.8rem; letter-spacing: 1px; color: var(--muted); margin-bottom: 0.4rem; }
-input, select, textarea {
-  width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.7rem 1rem;
-  font-size: 0.9rem;
-  font-family: 'Noto Sans KR', sans-serif;
-  margin-bottom: 1.2rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-textarea { resize: vertical; min-height: 100px; }
-.star-select { display: flex; gap: 0.5rem; margin-bottom: 1.2rem; }
-.star-select span {
-  font-size: 1.6rem;
-  cursor: pointer;
-  color: var(--border);
-  transition: color 0.15s;
-}
-.star-select span.on { color: var(--accent); }
-.submit-btn {
-  width: 100%;
-  padding: 0.8rem;
-  background: var(--accent);
-  color: var(--bg);
-  border: none;
-  font-size: 0.88rem;
-  letter-spacing: 2px;
-  cursor: pointer;
-  font-family: 'Noto Sans KR', sans-serif;
-  font-weight: 600;
-  transition: opacity 0.2s;
-}
-.submit-btn:hover { opacity: 0.85; }
-.review-item {
-  border-bottom: 1px solid var(--border);
-  padding: 1rem 0;
-}
-.review-item:last-child { border-bottom: none; }
-.review-movie { font-size: 0.82rem; color: var(--accent); letter-spacing: 1px; margin-bottom: 0.2rem; }
-.review-stars { color: var(--accent); font-size: 0.9rem; margin-bottom: 0.3rem; }
-.review-text { color: var(--muted); font-size: 0.87rem; line-height: 1.6; }
-.empty { color: var(--muted); font-size: 0.88rem; text-align: center; padding: 2rem 0; }
+.review-page-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.panel { background: var(--surface); border: 1px solid var(--border); padding: 2rem; }
+.panel-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 1.5rem; }
+.search-result { display: flex; gap: 1rem; align-items: center; padding: 0.8rem; background: var(--surface2); border: 1px solid var(--border); margin-bottom: 0.6rem; cursor: pointer; transition: border-color 0.2s; }
+.search-result:hover { border-color: var(--accent); }
+.search-result img { width: 48px; height: 72px; object-fit: cover; background: var(--bg); flex-shrink: 0; }
+.search-result-info { flex: 1; min-width: 0; }
+.search-result-title { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-result-meta { font-size: 0.75rem; color: var(--muted); }
+.selected-content { display: flex; gap: 1rem; align-items: flex-start; background: var(--surface2); border: 1px solid var(--accent); padding: 1rem; margin-bottom: 1.5rem; }
+.selected-content img { width: 60px; height: 90px; object-fit: cover; }
+.star-picker { display: flex; gap: 0.3rem; margin-bottom: 0.5rem; }
+.star-picker span { font-size: 1.8rem; cursor: pointer; color: var(--border); transition: color 0.15s; }
+.star-picker span.on { color: var(--accent); }
+.ott-picker { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ott-pick-btn { padding: 0.3rem 0.7rem; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 0.73rem; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.ott-pick-btn.selected { border-color: var(--accent); color: var(--accent); }
+@media (max-width: 700px) { .review-page-grid { grid-template-columns: 1fr; } }
 {% endblock %}
 
 {% block content %}
-<div class="page-title">REVIEW</div>
-<p class="page-sub">나만의 영화 감상을 기록하세요</p>
+<div class="section-title" style="margin-bottom:2rem;">WRITE REVIEW</div>
+<div class="review-page-grid">
 
-<div class="review-layout">
-  <div class="form-card">
-    <div class="card-title">리뷰 작성</div>
-    <label>영화 제목</label>
-    <input type="text" id="movie-input" placeholder="영화 제목을 입력하세요" />
-    <label>별점</label>
-    <div class="star-select" id="stars">
-      <span data-v="1">★</span>
-      <span data-v="2">★</span>
-      <span data-v="3">★</span>
-      <span data-v="4">★</span>
-      <span data-v="5">★</span>
+  <!-- 콘텐츠 검색 -->
+  <div class="panel">
+    <div class="panel-title">콘텐츠 검색</div>
+    <div class="form-group" style="display:flex;gap:0.5rem;">
+      <input id="search-input" placeholder="영화 또는 TV 제목 검색..." style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:0.7rem 1rem;font-family:inherit;outline:none;"/>
+      <button class="btn btn-sm" onclick="searchContent()">검색</button>
     </div>
-    <label>리뷰</label>
-    <textarea id="review-input" placeholder="영화에 대한 감상을 자유롭게 작성하세요"></textarea>
-    <button class="submit-btn" onclick="submitReview()">리뷰 등록</button>
+    <div id="search-results"></div>
+
+    <div id="selected-box" style="display:none;">
+      <div style="font-size:0.75rem;letter-spacing:1px;color:var(--muted);margin-bottom:0.5rem;">선택한 콘텐츠</div>
+      <div class="selected-content" id="selected-content-card"></div>
+      <a id="go-detail-btn" href="#" class="btn btn-sm" style="display:inline-block;margin-bottom:1rem;">상세 페이지에서 리뷰 보기 →</a>
+    </div>
   </div>
 
-  <div class="list-card">
-    <div class="card-title">작성된 리뷰</div>
-    <div id="review-list"><p class="empty">아직 작성된 리뷰가 없습니다</p></div>
+  <!-- 리뷰 작성 폼 -->
+  <div class="panel">
+    <div class="panel-title">리뷰 작성</div>
+    <div id="form-placeholder" style="color:var(--muted);font-size:0.85rem;">← 왼쪽에서 콘텐츠를 먼저 선택해주세요</div>
+    <div id="review-form" style="display:none;">
+      <div class="form-group">
+        <label>닉네임</label>
+        <input id="r-author" placeholder="닉네임"/>
+      </div>
+      <div class="form-group">
+        <label>별점</label>
+        <div class="star-picker" id="star-picker">
+          <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span>
+          <span data-v="4">★</span><span data-v="5">★</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>어떤 OTT에서 시청하셨나요?</label>
+        <div class="ott-picker">
+          <button class="ott-pick-btn selected" onclick="pickOtt(this,'')">선택 안 함</button>
+          <button class="ott-pick-btn" onclick="pickOtt(this,'Netflix')">🔴 Netflix</button>
+          <button class="ott-pick-btn" onclick="pickOtt(this,'Watcha')">🩷 Watcha</button>
+          <button class="ott-pick-btn" onclick="pickOtt(this,'Coupang Play')">🔵 Coupang Play</button>
+          <button class="ott-pick-btn" onclick="pickOtt(this,'Disney+')">🟦 Disney+</button>
+          <button class="ott-pick-btn" onclick="pickOtt(this,'Apple TV+')">⬛ Apple TV+</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>리뷰</label>
+        <textarea id="r-text" placeholder="감상을 자유롭게 남겨주세요..."></textarea>
+      </div>
+      <button class="btn filled" onclick="submitReview()">등록하기</button>
+      <span id="r-msg" style="font-size:0.8rem;color:var(--muted);margin-left:1rem;"></span>
+    </div>
   </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-  let selectedStar = 0;
-  const stars = document.querySelectorAll('#stars span');
+let selectedMedia = null;
+let selectedStar  = 0;
+let selectedOtt   = '';
 
-  stars.forEach(s => {
-    s.addEventListener('click', () => {
-      selectedStar = +s.dataset.v;
-      stars.forEach(x => x.classList.toggle('on', +x.dataset.v <= selectedStar));
-    });
+async function searchContent() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) return;
+  const res  = await fetch(`/api/browse?q=${encodeURIComponent(q)}&page=1`);
+  const data = await res.json();
+  const el   = document.getElementById('search-results');
+  const items = (data.results || []).slice(0, 8);
+  if (!items.length) { el.innerHTML = '<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem 0;">결과 없음</div>'; return; }
+  el.innerHTML = items.map(item => `
+    <div class="search-result" onclick="selectContent(${JSON.stringify(item).replace(/"/g,'&quot;')})">
+      ${item.poster ? `<img src="${item.poster}" alt="${item.title}">` : '<div style="width:48px;height:72px;background:var(--bg);display:flex;align-items:center;justify-content:center;">🎬</div>'}
+      <div class="search-result-info">
+        <div class="search-result-title">${item.title}</div>
+        <div class="search-result-meta">★ ${item.rating} · ${(item.release||'').slice(0,4)} · ${item.media_type==='tv'?'TV':'영화'}</div>
+      </div>
+    </div>`).join('');
+}
+
+function selectContent(item) {
+  selectedMedia = item;
+  document.getElementById('selected-box').style.display = 'block';
+  document.getElementById('review-form').style.display  = 'block';
+  document.getElementById('form-placeholder').style.display = 'none';
+  document.getElementById('go-detail-btn').href = `/content/${item.media_type}/${item.id}`;
+  document.getElementById('selected-content-card').innerHTML = `
+    ${item.poster ? `<img src="${item.poster}" alt="${item.title}">` : ''}
+    <div>
+      <div style="font-weight:600;margin-bottom:0.3rem;">${item.title}</div>
+      <div style="font-size:0.78rem;color:var(--muted);">★ ${item.rating} · ${(item.release||'').slice(0,4)}</div>
+    </div>`;
+}
+
+document.querySelectorAll('#star-picker span').forEach(s => {
+  s.addEventListener('click', () => {
+    selectedStar = +s.dataset.v;
+    document.querySelectorAll('#star-picker span').forEach(x =>
+      x.classList.toggle('on', +x.dataset.v <= selectedStar));
   });
+});
 
-  function submitReview() {
-    const movie = document.getElementById('movie-input').value.trim();
-    const text = document.getElementById('review-input').value.trim();
-    if (!movie || !text || !selectedStar) return alert('모든 항목을 입력해주세요.');
+function pickOtt(btn, val) {
+  document.querySelectorAll('.ott-pick-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected'); selectedOtt = val;
+}
 
-    const list = document.getElementById('review-list');
-    const empty = list.querySelector('.empty');
-    if (empty) empty.remove();
+async function submitReview() {
+  const msg    = document.getElementById('r-msg');
+  const author = document.getElementById('r-author').value.trim();
+  const text   = document.getElementById('r-text').value.trim();
+  if (!selectedMedia) { msg.textContent = '콘텐츠를 먼저 선택해주세요.'; return; }
+  if (!author || !text || !selectedStar) { msg.textContent = '닉네임, 별점, 리뷰를 모두 입력해주세요.'; return; }
 
-    const item = document.createElement('div');
-    item.className = 'review-item';
-    item.innerHTML = `
-      <div class="review-movie">${movie}</div>
-      <div class="review-stars">${'★'.repeat(selectedStar)}${'☆'.repeat(5 - selectedStar)}</div>
-      <div class="review-text">${text}</div>
-    `;
-    list.prepend(item);
-
-    document.getElementById('movie-input').value = '';
-    document.getElementById('review-input').value = '';
+  const res = await fetch(`/api/reviews/${selectedMedia.media_type}/${selectedMedia.id}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ author, text, rating: selectedStar, ott: selectedOtt })
+  });
+  if (res.ok) {
+    msg.textContent = '✅ 등록 완료! 상세 페이지에서 확인하세요.';
+    document.getElementById('r-author').value = '';
+    document.getElementById('r-text').value   = '';
     selectedStar = 0;
-    stars.forEach(x => x.classList.remove('on'));
+    document.querySelectorAll('#star-picker span').forEach(x => x.classList.remove('on'));
+  } else {
+    msg.textContent = '오류가 발생했습니다.';
   }
+}
+
+document.getElementById('search-input').addEventListener('keydown', e => { if (e.key === 'Enter') searchContent(); });
 </script>
 {% endblock %}

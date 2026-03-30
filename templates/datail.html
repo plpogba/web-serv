@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}상세 정보 — CineReview{% endblock %}
+
+{% block extra_style %}
+.detail-backdrop {
+  position: fixed; inset: 0; z-index: -1;
+  background-size: cover; background-position: center;
+  filter: brightness(0.18) blur(2px);
+}
+.detail-hero { display: grid; grid-template-columns: 260px 1fr; gap: 2.5rem; margin-bottom: 3rem; }
+.detail-poster { width: 100%; border-radius: 2px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); }
+.detail-poster-placeholder { width: 100%; aspect-ratio: 2/3; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+.detail-info { display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 0.5rem; }
+.detail-type { font-size: 0.7rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 0.6rem; }
+.detail-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 5vw, 4rem); letter-spacing: 2px; line-height: 1.05; margin-bottom: 0.5rem; }
+.detail-tagline { color: var(--muted); font-style: italic; font-size: 0.9rem; margin-bottom: 1rem; }
+.detail-meta { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.2rem; font-size: 0.85rem; color: var(--muted); }
+.detail-rating-big { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--accent); letter-spacing: 2px; }
+.detail-genres { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.genre-tag { padding: 0.2rem 0.7rem; border: 1px solid var(--border); font-size: 0.73rem; color: var(--muted); letter-spacing: 1px; }
+.detail-providers { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
+.provider-label { font-size: 0.73rem; letter-spacing: 1px; color: var(--muted); }
+.provider-logo { height: 32px; border-radius: 6px; border: 1px solid var(--border); }
+.detail-overview { color: #bbb; font-size: 0.92rem; line-height: 1.8; max-width: 600px; }
+
+/* Cast */
+.cast-row { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem; margin-bottom: 3rem; }
+.cast-card { flex: 0 0 90px; text-align: center; }
+.cast-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; background: var(--surface2); margin-bottom: 0.4rem; }
+.cast-name { font-size: 0.72rem; font-weight: 600; }
+.cast-char { font-size: 0.65rem; color: var(--muted); }
+
+/* Review tabs */
+.review-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+.review-tab { padding: 0.8rem 1.5rem; border: none; background: transparent; color: var(--muted); font-size: 0.82rem; letter-spacing: 1px; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.review-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.review-panel { display: none; }
+.review-panel.active { display: block; }
+
+/* TMDB 리뷰 */
+.ext-review { background: var(--surface); border: 1px solid var(--border); padding: 1.2rem; margin-bottom: 1rem; }
+.ext-review-author { font-size: 0.82rem; font-weight: 600; margin-bottom: 0.3rem; }
+.ext-review-rating { color: var(--accent); font-size: 0.78rem; margin-bottom: 0.6rem; }
+.ext-review-text { color: #aaa; font-size: 0.85rem; line-height: 1.7; }
+
+/* 자체 리뷰 */
+.site-review { background: var(--surface); border: 1px solid var(--border); padding: 1.2rem; margin-bottom: 1rem; }
+.site-review-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+.site-review-author { font-size: 0.85rem; font-weight: 600; }
+.site-review-ott { font-size: 0.7rem; }
+.site-review-rating { color: var(--accent); font-size: 0.9rem; margin-bottom: 0.5rem; }
+.site-review-text { color: #aaa; font-size: 0.85rem; line-height: 1.7; }
+.delete-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.75rem; transition: color 0.2s; }
+.delete-btn:hover { color: #e55; }
+
+/* Write form */
+.write-form { background: var(--surface); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem; }
+.write-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 2px; color: var(--accent); margin-bottom: 1.2rem; }
+.star-picker { display: flex; gap: 0.3rem; margin-bottom: 1rem; }
+.star-picker span { font-size: 1.6rem; cursor: pointer; color: var(--border); transition: color 0.15s; }
+.star-picker span.on { color: var(--accent); }
+.ott-picker { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.ott-pick-btn { padding: 0.3rem 0.8rem; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 0.75rem; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.ott-pick-btn.selected { border-color: var(--accent); color: var(--accent); }
+
+@media (max-width: 700px) { .detail-hero { grid-template-columns: 1fr; } }
+{% endblock %}
+
+{% block content %}
+<div class="detail-backdrop" id="detail-bg"></div>
+
+<!-- 헤더 -->
+<div class="detail-hero" id="detail-hero">
+  <div style="color:var(--muted);font-size:0.85rem;">불러오는 중...</div>
+</div>
+
+<!-- 출연진 -->
+<div id="cast-section" style="display:none;">
+  <div class="section-title" style="font-size:1.2rem;margin-bottom:1rem;">CAST</div>
+  <div class="cast-row" id="cast-row"></div>
+</div>
+
+<!-- 리뷰 탭 -->
+<div class="section-title" style="font-size:1.2rem;margin-bottom:1rem;">REVIEWS</div>
+<div class="review-tabs">
+  <button class="review-tab active" onclick="switchTab('site', this)">⭐ 사이트 리뷰</button>
+  <button class="review-tab" onclick="switchTab('tmdb', this)">🌐 TMDB 리뷰</button>
+</div>
+
+<!-- 사이트 리뷰 탭 -->
+<div class="review-panel active" id="tab-site">
+  <!-- 작성 폼 -->
+  <div class="write-form">
+    <div class="write-title">리뷰 작성</div>
+    <div class="form-group">
+      <label>닉네임</label>
+      <input id="r-author" placeholder="닉네임을 입력하세요"/>
+    </div>
+    <div class="form-group">
+      <label>별점</label>
+      <div class="star-picker" id="star-picker">
+        <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span>
+        <span data-v="4">★</span><span data-v="5">★</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>어떤 OTT에서 보셨나요? (선택)</label>
+      <div class="ott-picker" id="ott-picker">
+        <button class="ott-pick-btn" onclick="pickOtt(this, '')">선택 안 함</button>
+        <button class="ott-pick-btn" onclick="pickOtt(this, 'Netflix')">🔴 Netflix</button>
+        <button class="ott-pick-btn" onclick="pickOtt(this, 'Watcha')">🩷 Watcha</button>
+        <button class="ott-pick-btn" onclick="pickOtt(this, 'Coupang Play')">🔵 Coupang Play</button>
+        <button class="ott-pick-btn" onclick="pickOtt(this, 'Disney+')">🟦 Disney+</button>
+        <button class="ott-pick-btn" onclick="pickOtt(this, 'Apple TV+')">⬛ Apple TV+</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>리뷰</label>
+      <textarea id="r-text" placeholder="감상을 자유롭게 남겨주세요..."></textarea>
+    </div>
+    <button class="btn filled" onclick="submitReview()">등록하기</button>
+    <span id="r-msg" style="font-size:0.8rem;color:var(--muted);margin-left:1rem;"></span>
+  </div>
+  <div id="site-reviews-list"></div>
+</div>
+
+<!-- TMDB 리뷰 탭 -->
+<div class="review-panel" id="tab-tmdb">
+  <div id="tmdb-reviews-list"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MEDIA_TYPE  = "{{ media_type }}";
+const CONTENT_ID  = {{ content_id }};
+let selectedStar  = 0;
+let selectedOtt   = '';
+let tmdbReviews   = [];
+
+// ── 상세 정보 로드 ──
+async function loadDetail() {
+  const res  = await fetch(`/api/content/${MEDIA_TYPE}/${CONTENT_ID}`);
+  if (!res.ok) { document.getElementById('detail-hero').innerHTML = '<div style="color:#e55">콘텐츠를 불러올 수 없습니다.</div>'; return; }
+  const d = await res.json();
+
+  // 배경
+  if (d.backdrop) document.getElementById('detail-bg').style.backgroundImage = `url(${d.backdrop})`;
+
+  // 포스터 + 정보
+  const posterHTML = d.poster
+    ? `<img class="detail-poster" src="${d.poster}" alt="${d.title}">`
+    : `<div class="detail-poster-placeholder">🎬</div>`;
+
+  const providersHTML = d.providers.length
+    ? `<span class="provider-label">시청 가능</span>` +
+      d.providers.map(p =>
+        `<span class="ott-badge ott-${ottKey(p.name)}">${p.name}</span>`
+      ).join('')
+    : `<span style="font-size:0.78rem;color:var(--muted);">국내 OTT 미제공</span>`;
+
+  const genresHTML = d.genres.map(g => `<span class="genre-tag">${g}</span>`).join('');
+  const typeLabel  = MEDIA_TYPE === 'tv' ? 'TV 시리즈' : '영화';
+
+  document.getElementById('detail-hero').innerHTML = `
+    <div>${posterHTML}</div>
+    <div class="detail-info">
+      <div class="detail-type">${typeLabel}</div>
+      <div class="detail-title">${d.title}</div>
+      ${d.tagline ? `<div class="detail-tagline">"${d.tagline}"</div>` : ''}
+      <div class="detail-meta">
+        <div class="detail-rating-big">★ ${d.rating}</div>
+        <span>${d.vote_count.toLocaleString()}명 평가</span>
+        ${d.release ? `<span>${d.release.slice(0,4)}</span>` : ''}
+        ${d.runtime ? `<span>${d.runtime}분</span>` : ''}
+      </div>
+      <div class="detail-genres">${genresHTML}</div>
+      <div class="detail-providers">${providersHTML}</div>
+      <div class="detail-overview">${d.overview || '줄거리 정보 없음'}</div>
+    </div>`;
+
+  // 출연진
+  if (d.cast.length) {
+    document.getElementById('cast-section').style.display = 'block';
+    document.getElementById('cast-row').innerHTML = d.cast.map(c => `
+      <div class="cast-card">
+        ${c.photo
+          ? `<img class="cast-photo" src="${c.photo}" alt="${c.name}">`
+          : `<div class="cast-photo" style="display:flex;align-items:center;justify-content:center;font-size:1.8rem;">👤</div>`}
+        <div class="cast-name">${c.name}</div>
+        <div class="cast-char">${c.character || ''}</div>
+      </div>`).join('');
+  }
+
+  // TMDB 리뷰 저장
+  tmdbReviews = d.tmdb_reviews;
+  renderTmdbReviews();
+}
+
+// ── 자체 리뷰 로드 ──
+async function loadSiteReviews() {
+  const res  = await fetch(`/api/reviews/${MEDIA_TYPE}/${CONTENT_ID}`);
+  const data = await res.json();
+  renderSiteReviews(data);
+}
+
+function renderSiteReviews(reviews) {
+  const el = document.getElementById('site-reviews-list');
+  if (!reviews.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;padding:1rem 0;">아직 리뷰가 없습니다. 첫 번째 리뷰를 남겨보세요!</div>';
+    return;
+  }
+  el.innerHTML = reviews.map(r => `
+    <div class="site-review">
+      <div class="site-review-header">
+        <div>
+          <span class="site-review-author">${r.author}</span>
+          ${r.ott ? `<span class="site-review-ott" style="margin-left:0.5rem;color:var(--muted);">· ${r.ott}에서 시청</span>` : ''}
+        </div>
+        <button class="delete-btn" onclick="deleteReview(${r.id})">삭제</button>
+      </div>
+      <div class="site-review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
+      <div class="site-review-text">${r.text}</div>
+    </div>`).join('');
+}
+
+function renderTmdbReviews() {
+  const el = document.getElementById('tmdb-reviews-list');
+  if (!tmdbReviews.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;padding:1rem 0;">TMDB 리뷰가 없습니다.</div>';
+    return;
+  }
+  el.innerHTML = tmdbReviews.map(r => `
+    <div class="ext-review">
+      <div class="ext-review-author">👤 ${r.author} <span style="color:var(--muted);font-weight:300;font-size:0.75rem;">via TMDB</span></div>
+      ${r.rating ? `<div class="ext-review-rating">★ ${r.rating} / 10</div>` : ''}
+      <div class="ext-review-text">${r.content}</div>
+    </div>`).join('');
+}
+
+// ── 리뷰 작성 ──
+document.querySelectorAll('#star-picker span').forEach(s => {
+  s.addEventListener('click', () => {
+    selectedStar = +s.dataset.v;
+    document.querySelectorAll('#star-picker span').forEach(x =>
+      x.classList.toggle('on', +x.dataset.v <= selectedStar));
+  });
+});
+
+function pickOtt(btn, val) {
+  document.querySelectorAll('.ott-pick-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedOtt = val;
+}
+
+async function submitReview() {
+  const author = document.getElementById('r-author').value.trim();
+  const text   = document.getElementById('r-text').value.trim();
+  const msg    = document.getElementById('r-msg');
+
+  if (!author || !text || !selectedStar) {
+    msg.textContent = '닉네임, 별점, 리뷰 내용을 모두 입력해주세요.';
+    return;
+  }
+  const res = await fetch(`/api/reviews/${MEDIA_TYPE}/${CONTENT_ID}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ author, text, rating: selectedStar, ott: selectedOtt })
+  });
+  if (res.ok) {
+    document.getElementById('r-author').value = '';
+    document.getElementById('r-text').value = '';
+    selectedStar = 0;
+    selectedOtt  = '';
+    document.querySelectorAll('#star-picker span').forEach(x => x.classList.remove('on'));
+    document.querySelectorAll('.ott-pick-btn').forEach(b => b.classList.remove('selected'));
+    msg.textContent = '✅ 등록 완료!';
+    setTimeout(() => msg.textContent = '', 2000);
+    loadSiteReviews();
+  } else {
+    msg.textContent = '오류가 발생했습니다.';
+  }
+}
+
+async function deleteReview(id) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  await fetch(`/api/reviews/${MEDIA_TYPE}/${CONTENT_ID}/${id}`, { method: 'DELETE' });
+  loadSiteReviews();
+}
+
+// ── 탭 전환 ──
+function switchTab(tab, btn) {
+  document.querySelectorAll('.review-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.review-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+function ottKey(name) {
+  return { 'Netflix':'netflix','Watcha':'watcha','Coupang Play':'coupang','Disney+':'disney','Apple TV+':'apple' }[name] || 'apple';
+}
+
+loadDetail();
+loadSiteReviews();
+</script>
+{% endblock %}

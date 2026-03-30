@@ -1,76 +1,155 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🎬 Cinereview</title>
+  <title>{% block title %}CineReview{% endblock %}</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;600&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #0a0a0f;
-      --surface: #13131a;
-      --border: #2a2a3a;
-      --accent: #e8c55a;
-      --text: #e8e8f0;
-      --muted: #6b6b8a;
+      --bg: #080810;
+      --surface: #10101c;
+      --surface2: #181828;
+      --border: #252538;
+      --accent: #f0c040;
+      --text: #e8e8f4;
+      --muted: #5a5a78;
+      --netflix: #E50914;
+      --watcha: #FF0558;
+      --coupang: #1ABCFE;
+      --disney: #113CCF;
     }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Noto Sans KR', sans-serif;
-      min-height: 100vh;
-    }
-
+    /* ── NAV ── */
     nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1.2rem 2.5rem;
-      border-bottom: 1px solid var(--border);
-      background: rgba(10,10,15,0.95);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2.5rem; border-bottom: 1px solid var(--border);
+      background: rgba(8,8,16,0.92); position: sticky; top: 0; z-index: 200;
+      backdrop-filter: blur(16px);
     }
-
-    .logo {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.8rem;
-      letter-spacing: 3px;
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    .nav-links { display: flex; gap: 2rem; list-style: none; }
-    .nav-links a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.9rem;
-      letter-spacing: 1px;
-      transition: color 0.2s;
-    }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem; letter-spacing: 4px; color: var(--accent); text-decoration: none; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; letter-spacing: 1px; transition: color 0.2s; }
     .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+    .nav-search {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 0.4rem 1rem; border-radius: 2px;
+    }
+    .nav-search input { background: none; border: none; color: var(--text); font-size: 0.85rem; outline: none; width: 160px; font-family: inherit; }
+    .nav-search button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; }
 
-    main { padding: 3rem 2.5rem; max-width: 1100px; margin: 0 auto; }
+    /* ── MAIN ── */
+    main { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem; }
+
+    /* ── OTT BADGES ── */
+    .ott-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.25rem 0.7rem; border-radius: 3px; font-size: 0.72rem;
+      font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .ott-netflix  { background: rgba(229,9,20,0.15);  color: var(--netflix);  border: 1px solid rgba(229,9,20,0.3); }
+    .ott-watcha   { background: rgba(255,5,88,0.15);  color: var(--watcha);   border: 1px solid rgba(255,5,88,0.3); }
+    .ott-coupang  { background: rgba(26,188,254,0.15);color: var(--coupang);  border: 1px solid rgba(26,188,254,0.3); }
+    .ott-disney   { background: rgba(17,60,207,0.15); color: #4e7fff;         border: 1px solid rgba(17,60,207,0.3); }
+    .ott-apple    { background: rgba(255,255,255,0.08);color: #ccc;           border: 1px solid rgba(255,255,255,0.15); }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      overflow: hidden; transition: transform 0.2s, border-color 0.2s; cursor: pointer; position: relative;
+    }
+    .card:hover { transform: translateY(-4px); border-color: var(--accent); }
+    .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; background: var(--surface2); }
+    .card-body { padding: 0.9rem; }
+    .card-title { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-meta  { font-size: 0.75rem; color: var(--muted); display: flex; gap: 0.5rem; align-items: center; }
+    .card-rating { color: var(--accent); font-weight: 600; }
+    .card-otts  { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.5rem; }
+
+    /* ── STAR RATING ── */
+    .stars { color: var(--accent); letter-spacing: 2px; }
+
+    /* ── BUTTONS ── */
+    .btn { display: inline-block; padding: 0.7rem 1.8rem; border: 1px solid var(--accent); color: var(--accent); background: transparent; font-size: 0.82rem; letter-spacing: 2px; cursor: pointer; font-family: inherit; transition: all 0.2s; text-decoration: none; }
+    .btn:hover, .btn.filled { background: var(--accent); color: var(--bg); }
+    .btn.filled:hover { background: transparent; color: var(--accent); }
+    .btn-sm { padding: 0.4rem 1rem; font-size: 0.75rem; }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label { display: block; font-size: 0.78rem; letter-spacing: 1px; color: var(--muted); margin-bottom: 0.4rem; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 0.7rem 1rem; font-size: 0.88rem;
+      font-family: inherit; outline: none; transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+    .form-group textarea { resize: vertical; min-height: 90px; }
+    .form-group select option { background: var(--surface2); }
+
+    /* ── LOADER ── */
+    .loader { text-align: center; padding: 4rem; color: var(--muted); font-size: 0.88rem; letter-spacing: 2px; }
+
+    /* ── GRID ── */
+    .content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1.2rem; }
+
+    /* ── SECTION TITLE ── */
+    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 1.2rem; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 2rem; align-items: center; }
+    .filter-chip {
+      padding: 0.4rem 1rem; border: 1px solid var(--border); background: transparent;
+      color: var(--muted); font-size: 0.78rem; letter-spacing: 1px; cursor: pointer;
+      font-family: inherit; transition: all 0.2s;
+    }
+    .filter-chip:hover, .filter-chip.active { border-color: var(--accent); color: var(--accent); background: rgba(240,192,64,0.08); }
+    .filter-chip.ott-active-netflix  { border-color: var(--netflix);  color: var(--netflix);  background: rgba(229,9,20,0.1); }
+    .filter-chip.ott-active-watcha   { border-color: var(--watcha);   color: var(--watcha);   background: rgba(255,5,88,0.1); }
+    .filter-chip.ott-active-coupang  { border-color: var(--coupang);  color: var(--coupang);  background: rgba(26,188,254,0.1); }
+    .filter-chip.ott-active-disney   { border-color: #4e7fff; color: #4e7fff; background: rgba(17,60,207,0.1); }
 
     {% block extra_style %}{% endblock %}
   </style>
 </head>
 <body>
-  <nav>
-    <a href="/" class="logo">CINEREVIEW</a>
-    <ul class="nav-links">
-      <li><a href="/" {% if request.path == '/' %}class="active"{% endif %}>HOME</a></li>
-      <li><a href="/movies" {% if request.path == '/movies' %}class="active"{% endif %}>MOVIES</a></li>
-      <li><a href="/review" {% if request.path == '/review' %}class="active"{% endif %}>REVIEW</a></li>
-    </ul>
-  </nav>
-  <main>
-    {% block content %}{% endblock %}
-  </main>
+<nav>
+  <a href="/" class="logo">CINEREVIEW</a>
+  <ul class="nav-links">
+    <li><a href="/"       id="nav-home">HOME</a></li>
+    <li><a href="/browse" id="nav-browse">BROWSE</a></li>
+    <li><a href="/review" id="nav-review">REVIEW</a></li>
+  </ul>
+  <div class="nav-search">
+    <input id="nav-q" placeholder="검색..." onkeydown="if(event.key==='Enter') navSearch()"/>
+    <button onclick="navSearch()">🔍</button>
+  </div>
+</nav>
+<main>{% block content %}{% endblock %}</main>
+<script>
+  // 현재 페이지 nav 활성화
+  const path = location.pathname;
+  if (path === '/')         document.getElementById('nav-home').classList.add('active');
+  if (path.startsWith('/browse')) document.getElementById('nav-browse').classList.add('active');
+  if (path.startsWith('/review')) document.getElementById('nav-review').classList.add('active');
+
+  function navSearch() {
+    const q = document.getElementById('nav-q').value.trim();
+    if (q) location.href = `/browse?q=${encodeURIComponent(q)}`;
+  }
+  function ottClass(name) {
+    const m = { 'Netflix':'netflix','Watcha':'watcha','Coupang Play':'coupang','Disney+':'disney','Apple TV+':'apple' };
+    return 'ott-' + (m[name] || 'apple');
+  }
+  function stars(r) {
+    const full = Math.round(r / 2);
+    return '★'.repeat(full) + '☆'.repeat(5 - full);
+  }
+</script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

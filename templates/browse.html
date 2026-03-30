@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Browse — CineReview{% endblock %}
+
+{% block extra_style %}
+.browse-layout { display: grid; grid-template-columns: 220px 1fr; gap: 2rem; align-items: start; }
+.sidebar { position: sticky; top: 5rem; }
+.sidebar-title { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 3px; color: var(--muted); margin-bottom: 0.8rem; }
+.sidebar-group { margin-bottom: 1.8rem; }
+.sidebar-chip {
+  display: block; width: 100%; text-align: left;
+  padding: 0.45rem 0.8rem; border: 1px solid transparent;
+  background: transparent; color: var(--muted); font-size: 0.82rem;
+  letter-spacing: 0.5px; cursor: pointer; font-family: inherit;
+  transition: all 0.15s; margin-bottom: 0.2rem;
+}
+.sidebar-chip:hover { color: var(--text); border-color: var(--border); }
+.sidebar-chip.active { color: var(--accent); border-color: var(--accent); background: rgba(240,192,64,0.07); }
+.sidebar-chip.ott-netflix.active  { color: var(--netflix); border-color: var(--netflix); background: rgba(229,9,20,0.08); }
+.sidebar-chip.ott-watcha.active   { color: var(--watcha);  border-color: var(--watcha);  background: rgba(255,5,88,0.08); }
+.sidebar-chip.ott-coupang.active  { color: var(--coupang); border-color: var(--coupang); background: rgba(26,188,254,0.08); }
+.sidebar-chip.ott-disney.active   { color: #4e7fff; border-color: #4e7fff; background: rgba(17,60,207,0.08); }
+
+.results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.results-count { color: var(--muted); font-size: 0.82rem; }
+.type-toggle { display: flex; gap: 0; }
+.type-btn { padding: 0.4rem 1rem; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 0.78rem; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.type-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+.pagination { display: flex; gap: 0.5rem; justify-content: center; margin-top: 2.5rem; }
+.page-btn { padding: 0.5rem 0.9rem; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-family: inherit; font-size: 0.82rem; transition: all 0.15s; }
+.page-btn:hover, .page-btn.active { border-color: var(--accent); color: var(--accent); }
+
+@media (max-width: 700px) { .browse-layout { grid-template-columns: 1fr; } .sidebar { position: static; } }
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:1.5rem;">
+  <div class="section-title">BROWSE</div>
+  <div id="search-label" style="color:var(--muted);font-size:0.85rem;display:none;"></div>
+</div>
+
+<div class="browse-layout">
+  <!-- 사이드바 필터 -->
+  <aside class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-title">TYPE</div>
+      <div class="type-toggle">
+        <button class="type-btn active" onclick="setType('movie', this)">영화</button>
+        <button class="type-btn" onclick="setType('tv', this)">TV/시리즈</button>
+      </div>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-title">OTT</div>
+      <button class="sidebar-chip active" onclick="setOtt('', this)">전체</button>
+      <button class="sidebar-chip ott-netflix" onclick="setOtt('8', this)">🔴 Netflix</button>
+      <button class="sidebar-chip ott-watcha"  onclick="setOtt('97', this)">🩷 Watcha</button>
+      <button class="sidebar-chip ott-coupang" onclick="setOtt('356', this)">🔵 Coupang Play</button>
+      <button class="sidebar-chip ott-disney"  onclick="setOtt('337', this)">🟦 Disney+</button>
+      <button class="sidebar-chip" onclick="setOtt('2', this)">⬛ Apple TV+</button>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-title">GENRE</div>
+      <div id="genre-list"><div style="color:var(--muted);font-size:0.8rem;">로딩 중...</div></div>
+    </div>
+  </aside>
+
+  <!-- 결과 -->
+  <div>
+    <div class="results-header">
+      <div class="results-count" id="results-count"></div>
+    </div>
+    <div class="content-grid" id="results-grid">
+      <div class="loader" style="grid-column:1/-1;">불러오는 중...</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let state = { type: 'movie', ott: '', genre: '', page: 1, q: '' };
+
+// URL 쿼리에서 초기 검색어 읽기
+const urlQ = new URLSearchParams(location.search).get('q') || '';
+if (urlQ) {
+  state.q = urlQ;
+  document.getElementById('search-label').textContent = `"${urlQ}" 검색 결과`;
+  document.getElementById('search-label').style.display = 'block';
+  document.getElementById('nav-q').value = urlQ;
+}
+
+async function loadGenres() {
+  const res  = await fetch(`/api/genres/${state.type}`);
+  const data = await res.json();
+  const el   = document.getElementById('genre-list');
+  el.innerHTML = `<button class="sidebar-chip active" onclick="setGenre('', this)">전체</button>` +
+    data.map(g => `<button class="sidebar-chip" onclick="setGenre('${g.id}', this)">${g.name}</button>`).join('');
+}
+
+async function loadResults() {
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = '<div class="loader" style="grid-column:1/-1;">불러오는 중...</div>';
+
+  const params = new URLSearchParams({
+    type: state.type, ott: state.ott, genre: state.genre,
+    page: state.page, q: state.q
+  });
+  const res  = await fetch(`/api/browse?${params}`);
+  const data = await res.json();
+  const items = data.results || [];
+
+  document.getElementById('results-count').textContent = items.length ? `${items.length}개 표시 중` : '';
+
+  if (!items.length) {
+    grid.innerHTML = '<div class="loader" style="grid-column:1/-1;">결과가 없습니다</div>';
+    return;
+  }
+
+  grid.innerHTML = items.map(item => `
+    <div class="card" onclick="location.href='/content/${item.media_type||state.type}/${item.id}'">
+      ${item.poster
+        ? `<img src="${item.poster}" alt="${item.title}" loading="lazy">`
+        : `<div style="width:100%;aspect-ratio:2/3;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🎬</div>`}
+      <div class="card-body">
+        <div class="card-title">${item.title}</div>
+        <div class="card-meta">
+          <span class="card-rating">★ ${item.rating}</span>
+          <span>${(item.release||'').slice(0,4)}</span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  // 페이지네이션
+  const total = Math.min(data.total_pages || 1, 10);
+  const pg    = document.getElementById('pagination');
+  pg.innerHTML = '';
+  for (let i = 1; i <= total; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (i === state.page ? ' active' : '');
+    btn.textContent = i;
+    btn.onclick = () => { state.page = i; loadResults(); scrollTo(0, 0); };
+    pg.appendChild(btn);
+  }
+}
+
+function setType(t, btn) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.type = t; state.page = 1; state.genre = '';
+  loadGenres(); loadResults();
+}
+function setOtt(id, btn) {
+  document.querySelectorAll('.sidebar-chip').forEach(b => { if (b.closest('#genre-list') === null) b.classList.remove('active'); });
+  btn.classList.add('active');
+  state.ott = id; state.page = 1; loadResults();
+}
+function setGenre(id, btn) {
+  document.querySelectorAll('#genre-list .sidebar-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.genre = id; state.page = 1; loadResults();
+}
+
+loadGenres();
+loadResults();
+</script>
+{% endblock %}
