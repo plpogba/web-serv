@@ -2,7 +2,9 @@ from flask import Flask, request, jsonify, render_template
 import urllib.request
 import urllib.parse
 import json
-
+import urllib.error
+import ssl
+import certifi
 app = Flask(__name__)
 
 # ─────────────────────────────────────────
@@ -35,13 +37,25 @@ def tmdb_get(path, extra_params=None):
     params = {"api_key": TMDB_API_KEY, "language": LANGUAGE}
     if extra_params:
         params.update(extra_params)
+        
     url = f"{TMDB_BASE}{path}?{urllib.parse.urlencode(params)}"
+    
+    req = urllib.request.Request(
+        url, 
+        headers={'User-Agent': 'Mozilla/5.0'}
+    )
+    
     try:
-        with urllib.request.urlopen(url, timeout=5) as res:
+        # ✅ 핵심: certifi가 제공하는 인증서 경로를 사용하여 SSL 컨텍스트 생성
+        context = ssl.create_default_context(cafile=certifi.where())
+        
+        # ✅ urlopen 시 생성한 context를 명시적으로 넘겨줌
+        with urllib.request.urlopen(req, timeout=5, context=context) as res:
             return json.loads(res.read())
+            
     except Exception as e:
+        print(f"🚨 [Error] {str(e)}")
         return None
-
 def format_content(item, media_type=None):
     """TMDB 응답을 공통 포맷으로 변환"""
     mt = media_type or item.get("media_type", "movie")
