@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify, render_template
 from review_repository import ReviewRepository
 from discover_params import DiscoverParams
+from tmdb_parser import TmdbParser
+from media_type_handler import HANDLERS
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -15,18 +17,10 @@ app = Flask(__name__)
 
 TMDB_API_KEY  = "9ca27837eb1468b7e55e35038920d183"
 TMDB_BASE     = "https://api.themoviedb.org/3"
-TMDB_IMG_BASE = "https://image.tmdb.org/t/p/w500"
 LANGUAGE      = "ko-KR"
 
-OTT_PROVIDERS = {
-    8:   {"name": "Netflix",      "color": "#E50914"},
-    97:  {"name": "Watcha",       "color": "#FF0558"},
-    356: {"name": "Coupang Play", "color": "#1ABCFE"},
-    337: {"name": "Disney+",      "color": "#113CCF"},
-    2:   {"name": "Apple TV+",    "color": "#555555"},
-}
-
 review_repo = ReviewRepository()
+parser = TmdbParser()
 
 # ─────────────────────────────────────────
 #  SSL 컨텍스트 (인증서 오류 방지)
@@ -58,47 +52,14 @@ def tmdb_get(path, extra_params=None):
 
 def safe_runtime(detail):
     """영화/TV 상영 시간 안전하게 추출"""
-    rt = detail.get("runtime")
-    if rt:
-        return rt
-    ep = detail.get("episode_run_time")
-    if ep and isinstance(ep, list) and len(ep) > 0:
-        return ep[0]
-    return None
+    return parser.parse_runtime(detail)
 
 def format_content(item, media_type=None):
-    mt = media_type or item.get("media_type", "movie")
-    if mt not in ("movie", "tv"):   # person 등 제외
-        return None
-    return {
-        "id":         item.get("id"),
-        "media_type": mt,
-        "title":      item.get("title") or item.get("name", ""),
-        "overview":   item.get("overview", ""),
-        "poster":     TMDB_IMG_BASE + item["poster_path"] if item.get("poster_path") else None,
-        "backdrop":   "https://image.tmdb.org/t/p/w1280" + item["backdrop_path"] if item.get("backdrop_path") else None,
-        "rating":     round(float(item.get("vote_average") or 0), 1),
-        "vote_count": item.get("vote_count", 0),
-        "release":    item.get("release_date") or item.get("first_air_date", ""),
-        "genre_ids":  item.get("genre_ids", []),
-    }
+    return parser.parse_list_item(item, media_type)
 
 def get_providers(content_id, media_type):
     data = tmdb_get(f"/{media_type}/{content_id}/watch/providers")
-    if not data:
-        return []
-    kr = data.get("results", {}).get("KR", {})
-    provider_list = (kr.get("flatrate") or []) + (kr.get("buy") or []) + (kr.get("rent") or [])
-    seen, result = set(), []
-    for p in provider_list:
-        pid = p.get("provider_id")
-        if pid in OTT_PROVIDERS and pid not in seen:
-            seen.add(pid)
-            info = OTT_PROVIDERS[pid].copy()
-            logo = p.get("logo_path", "")
-            info["logo_url"] = f"https://image.tmdb.org/t/p/w92{logo}" if logo else ""
-            result.append(info)
-    return result
+    return parser.parse_providers(data)
 
 # ─────────────────────────────────────────
 #  Flask 오류 핸들러
@@ -191,48 +152,13 @@ def api_content_detail(media_type, content_id):
         if not detail:
             return jsonify({"error": "콘텐츠를 찾을 수 없습니다."}), 404
 
-        # 출연진
-        cast = []
-        for c in (detail.get("credits") or {}).get("cast", [])[:10]:
-            cast.append({
-                "name":      c.get("name", ""),
-                "character": c.get("character", ""),
-                "photo":     TMDB_IMG_BASE + c["profile_path"] if c.get("profile_path") else None,
-            })
-
-        # TMDB 리뷰
-        tmdb_reviews = []
-        for r in (detail.get("reviews") or {}).get("results", [])[:5]:
-            content_text = r.get("content", "")
-            tmdb_reviews.append({
-                "author":  r.get("author", "익명"),
-                "content": content_text[:400] + ("..." if len(content_text) > 400 else ""),
-                "rating":  (r.get("author_details") or {}).get("rating"),
-            })
-
         # OTT 편성
-        providers = get_providers(content_id, media_type)
+        providers_data = tmdb_get(f"/{media_type}/{content_id}/watch/providers")
 
-        # 장르
-        genres = [g["name"] for g in (detail.get("genres") or [])]
+        # 파서로 데이터 변환
+        result = parser.parse_detail(content_id, media_type, detail, providers_data)
 
-        return jsonify({
-            "id":           content_id,
-            "media_type":   media_type,
-            "title":        detail.get("title") or detail.get("name") or "제목 없음",
-            "tagline":      detail.get("tagline") or "",
-            "overview":     detail.get("overview") or "줄거리 정보 없음",
-            "poster":       TMDB_IMG_BASE + detail["poster_path"] if detail.get("poster_path") else None,
-            "backdrop":     "https://image.tmdb.org/t/p/w1280" + detail["backdrop_path"] if detail.get("backdrop_path") else None,
-            "rating":       round(float(detail.get("vote_average") or 0), 1),
-            "vote_count":   detail.get("vote_count") or 0,
-            "release":      detail.get("release_date") or detail.get("first_air_date") or "",
-            "runtime":      safe_runtime(detail),   # ← 수정된 안전한 추출
-            "genres":       genres,
-            "cast":         cast,
-            "providers":    providers,
-            "tmdb_reviews": tmdb_reviews,
-        })
+        return jsonify(result)
 
     except Exception as e:
         return jsonify({"error": f"서버 오류: {str(e)}"}), 500
