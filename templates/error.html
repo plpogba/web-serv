@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}오류 — CineReview{% endblock %}
+{% block content %}
+<div style="text-align:center;padding:6rem 0;">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:6rem;color:var(--border);letter-spacing:4px;">{{ code }}</div>
+  <div style="font-size:1rem;color:var(--muted);margin-bottom:2rem;">{{ msg }}</div>
+  <a href="/" class="btn">← 홈으로 돌아가기</a>
+</div>
+{% endblock %}

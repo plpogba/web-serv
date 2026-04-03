@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify, render_template
 import urllib.request
 import urllib.parse
-import json
 import urllib.error
+import json
 import ssl
-import certifi
+
 app = Flask(__name__)
 
 # ─────────────────────────────────────────
@@ -16,79 +16,99 @@ TMDB_BASE     = "https://api.themoviedb.org/3"
 TMDB_IMG_BASE = "https://image.tmdb.org/t/p/w500"
 LANGUAGE      = "ko-KR"
 
-# JustWatch는 TMDB의 watch/providers 엔드포인트로 대체 (공식 파트너십)
-# provider_id: 넷플릭스=8, 왓챠=97, 쿠팡플레이=356, 디즈니+=337, 애플TV=2
 OTT_PROVIDERS = {
-    8:   {"name": "Netflix",       "color": "#E50914", "logo": "netflix"},
-    97:  {"name": "Watcha",        "color": "#FF0558", "logo": "watcha"},
-    356: {"name": "Coupang Play",  "color": "#1ABCFE", "logo": "coupang"},
-    337: {"name": "Disney+",       "color": "#113CCF", "logo": "disney"},
-    2:   {"name": "Apple TV+",     "color": "#555555", "logo": "apple"},
+    8:   {"name": "Netflix",      "color": "#E50914"},
+    97:  {"name": "Watcha",       "color": "#FF0558"},
+    356: {"name": "Coupang Play", "color": "#1ABCFE"},
+    337: {"name": "Disney+",      "color": "#113CCF"},
+    2:   {"name": "Apple TV+",    "color": "#555555"},
 }
 
-# 자체 리뷰 DB
-REVIEWS = {}   # { content_id: [ {id, author, rating, text, ott, created_at} ] }
+REVIEWS = {}  # { "movie_123": [{id, author, rating, text, ott}] }
 
 # ─────────────────────────────────────────
-#  TMDB 헬퍼 함수
+#  SSL 컨텍스트 (인증서 오류 방지)
+# ─────────────────────────────────────────
+
+SSL_CTX = ssl.create_default_context()
+SSL_CTX.check_hostname = False
+SSL_CTX.verify_mode    = ssl.CERT_NONE
+
+# ─────────────────────────────────────────
+#  TMDB 헬퍼
 # ─────────────────────────────────────────
 
 def tmdb_get(path, extra_params=None):
     params = {"api_key": TMDB_API_KEY, "language": LANGUAGE}
     if extra_params:
         params.update(extra_params)
-        
     url = f"{TMDB_BASE}{path}?{urllib.parse.urlencode(params)}"
-    
-    req = urllib.request.Request(
-        url, 
-        headers={'User-Agent': 'Mozilla/5.0'}
-    )
-    
     try:
-        # ✅ 핵심: certifi가 제공하는 인증서 경로를 사용하여 SSL 컨텍스트 생성
-        context = ssl.create_default_context(cafile=certifi.where())
-        
-        # ✅ urlopen 시 생성한 context를 명시적으로 넘겨줌
-        with urllib.request.urlopen(req, timeout=5, context=context) as res:
-            return json.loads(res.read())
-            
-    except Exception as e:
-        print(f"🚨 [Error] {str(e)}")
+        req = urllib.request.Request(url, headers={"User-Agent": "CineReview/1.0"})
+        with urllib.request.urlopen(req, timeout=10, context=SSL_CTX) as res:
+            data = json.loads(res.read().decode("utf-8"))
+            # TMDB 오류 응답 체크 (status_code 필드가 있으면 API 오류)
+            if "status_code" in data and data.get("status_code") != 1:
+                return None
+            return data
+    except Exception:
         return None
+
+def safe_runtime(detail):
+    """영화/TV 상영 시간 안전하게 추출"""
+    rt = detail.get("runtime")
+    if rt:
+        return rt
+    ep = detail.get("episode_run_time")
+    if ep and isinstance(ep, list) and len(ep) > 0:
+        return ep[0]
+    return None
+
 def format_content(item, media_type=None):
-    """TMDB 응답을 공통 포맷으로 변환"""
     mt = media_type or item.get("media_type", "movie")
+    if mt not in ("movie", "tv"):   # person 등 제외
+        return None
     return {
-        "id":          item.get("id"),
-        "media_type":  mt,
-        "title":       item.get("title") or item.get("name", ""),
-        "overview":    item.get("overview", ""),
-        "poster":      TMDB_IMG_BASE + item["poster_path"] if item.get("poster_path") else None,
-        "backdrop":    "https://image.tmdb.org/t/p/w1280" + item["backdrop_path"] if item.get("backdrop_path") else None,
-        "rating":      round(item.get("vote_average", 0), 1),
-        "vote_count":  item.get("vote_count", 0),
-        "release":     item.get("release_date") or item.get("first_air_date", ""),
-        "genre_ids":   item.get("genre_ids", []),
+        "id":         item.get("id"),
+        "media_type": mt,
+        "title":      item.get("title") or item.get("name", ""),
+        "overview":   item.get("overview", ""),
+        "poster":     TMDB_IMG_BASE + item["poster_path"] if item.get("poster_path") else None,
+        "backdrop":   "https://image.tmdb.org/t/p/w1280" + item["backdrop_path"] if item.get("backdrop_path") else None,
+        "rating":     round(float(item.get("vote_average") or 0), 1),
+        "vote_count": item.get("vote_count", 0),
+        "release":    item.get("release_date") or item.get("first_air_date", ""),
+        "genre_ids":  item.get("genre_ids", []),
     }
 
 def get_providers(content_id, media_type):
-    """JustWatch 연동 (TMDB watch/providers - 공식 파트너십)"""
     data = tmdb_get(f"/{media_type}/{content_id}/watch/providers")
     if not data:
         return []
     kr = data.get("results", {}).get("KR", {})
-    provider_list = kr.get("flatrate", []) + kr.get("buy", []) + kr.get("rent", [])
-    seen = set()
-    result = []
+    provider_list = (kr.get("flatrate") or []) + (kr.get("buy") or []) + (kr.get("rent") or [])
+    seen, result = set(), []
     for p in provider_list:
         pid = p.get("provider_id")
         if pid in OTT_PROVIDERS and pid not in seen:
             seen.add(pid)
             info = OTT_PROVIDERS[pid].copy()
-            info["logo_url"] = f"https://image.tmdb.org/t/p/original{p.get('logo_path','')}"
+            logo = p.get("logo_path", "")
+            info["logo_url"] = f"https://image.tmdb.org/t/p/w92{logo}" if logo else ""
             result.append(info)
     return result
+
+# ─────────────────────────────────────────
+#  Flask 오류 핸들러
+# ─────────────────────────────────────────
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("error.html", code=404, msg="페이지를 찾을 수 없습니다."), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template("error.html", code=500, msg=str(e)), 500
 
 # ─────────────────────────────────────────
 #  페이지 라우트
@@ -104,6 +124,8 @@ def browse():
 
 @app.route("/content/<media_type>/<int:content_id>")
 def content_detail(media_type, content_id):
+    if media_type not in ("movie", "tv"):
+        return render_template("error.html", code=400, msg="잘못된 콘텐츠 유형입니다."), 400
     return render_template("detail.html",
                            content_id=content_id,
                            media_type=media_type)
@@ -113,24 +135,19 @@ def review_page():
     return render_template("review.html")
 
 # ─────────────────────────────────────────
-#  API — 콘텐츠 조회
+#  API — 콘텐츠
 # ─────────────────────────────────────────
 
 @app.route("/api/trending")
 def api_trending():
-    """홈 화면 트렌딩 (영화+TV 통합)"""
     data = tmdb_get("/trending/all/week")
     if not data:
         return jsonify([])
-    items = [format_content(i) for i in data.get("results", [])[:20]]
-    return jsonify(items)
+    items = [format_content(i) for i in data.get("results", [])]
+    return jsonify([i for i in items if i])  # None 제거
 
 @app.route("/api/browse")
 def api_browse():
-    """
-    전체 목록 조회
-    ?type=movie|tv  ?genre=장르id  ?ott=provider_id  ?q=검색어  ?page=1
-    """
     media_type = request.args.get("type", "movie")
     genre      = request.args.get("genre", "")
     ott        = request.args.get("ott", "")
@@ -161,70 +178,76 @@ def api_browse():
         results = []
         for item in data.get("results", []):
             mt = item.get("media_type", media_type)
-            if mt in ("movie", "tv"):
-                results.append(format_content(item, mt))
+            formatted = format_content(item, mt)
+            if formatted:
+                results.append(formatted)
 
         return jsonify({"results": results, "total_pages": data.get("total_pages", 1)})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e), "results": [], "total_pages": 0}), 500
 
 @app.route("/api/content/<media_type>/<int:content_id>")
 def api_content_detail(media_type, content_id):
-    """콘텐츠 상세 정보 (기본정보 + OTT편성 + 출연진 + TMDB리뷰)"""
     try:
-        # 기본 정보
-        detail = tmdb_get(f"/{media_type}/{content_id}", {"append_to_response": "credits,reviews"})
+        if media_type not in ("movie", "tv"):
+            return jsonify({"error": "잘못된 media_type"}), 400
+
+        # 기본 정보 (credits, reviews 함께 요청)
+        detail = tmdb_get(
+            f"/{media_type}/{content_id}",
+            {"append_to_response": "credits,reviews"}
+        )
         if not detail:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify({"error": "콘텐츠를 찾을 수 없습니다."}), 404
 
         # 출연진
         cast = []
-        for c in detail.get("credits", {}).get("cast", [])[:10]:
+        for c in (detail.get("credits") or {}).get("cast", [])[:10]:
             cast.append({
-                "name":      c.get("name"),
-                "character": c.get("character"),
+                "name":      c.get("name", ""),
+                "character": c.get("character", ""),
                 "photo":     TMDB_IMG_BASE + c["profile_path"] if c.get("profile_path") else None,
             })
 
-        # TMDB 외부 리뷰
+        # TMDB 리뷰
         tmdb_reviews = []
-        for r in detail.get("reviews", {}).get("results", [])[:5]:
+        for r in (detail.get("reviews") or {}).get("results", [])[:5]:
+            content_text = r.get("content", "")
             tmdb_reviews.append({
-                "author":  r.get("author"),
-                "content": r.get("content", "")[:300] + ("..." if len(r.get("content","")) > 300 else ""),
-                "rating":  r.get("author_details", {}).get("rating"),
-                "source":  "TMDB",
+                "author":  r.get("author", "익명"),
+                "content": content_text[:400] + ("..." if len(content_text) > 400 else ""),
+                "rating":  (r.get("author_details") or {}).get("rating"),
             })
 
-        # OTT 편성 (JustWatch via TMDB)
+        # OTT 편성
         providers = get_providers(content_id, media_type)
 
         # 장르
-        genres = [g.get("name") for g in detail.get("genres", [])]
+        genres = [g["name"] for g in (detail.get("genres") or [])]
 
         return jsonify({
             "id":           content_id,
             "media_type":   media_type,
-            "title":        detail.get("title") or detail.get("name"),
-            "tagline":      detail.get("tagline", ""),
-            "overview":     detail.get("overview", ""),
+            "title":        detail.get("title") or detail.get("name") or "제목 없음",
+            "tagline":      detail.get("tagline") or "",
+            "overview":     detail.get("overview") or "줄거리 정보 없음",
             "poster":       TMDB_IMG_BASE + detail["poster_path"] if detail.get("poster_path") else None,
             "backdrop":     "https://image.tmdb.org/t/p/w1280" + detail["backdrop_path"] if detail.get("backdrop_path") else None,
-            "rating":       round(detail.get("vote_average", 0), 1),
-            "vote_count":   detail.get("vote_count", 0),
-            "release":      detail.get("release_date") or detail.get("first_air_date", ""),
-            "runtime":      detail.get("runtime") or detail.get("episode_run_time", [None])[0],
+            "rating":       round(float(detail.get("vote_average") or 0), 1),
+            "vote_count":   detail.get("vote_count") or 0,
+            "release":      detail.get("release_date") or detail.get("first_air_date") or "",
+            "runtime":      safe_runtime(detail),   # ← 수정된 안전한 추출
             "genres":       genres,
             "cast":         cast,
             "providers":    providers,
             "tmdb_reviews": tmdb_reviews,
         })
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"서버 오류: {str(e)}"}), 500
 
 @app.route("/api/genres/<media_type>")
 def api_genres(media_type):
-    """장르 목록"""
     data = tmdb_get(f"/genre/{media_type}/list")
     if not data:
         return jsonify([])
@@ -243,40 +266,28 @@ def get_site_reviews(media_type, content_id):
 def create_site_review(media_type, content_id):
     data = request.get_json(silent=True)
     if not data:
-        return jsonify({"error": "No data"}), 400
-
-    author = data.get("author", "").strip()
-    text   = data.get("text", "").strip()
+        return jsonify({"error": "데이터 없음"}), 400
+    author = (data.get("author") or "").strip()
+    text   = (data.get("text")   or "").strip()
     rating = data.get("rating")
-    ott    = data.get("ott", "")   # 어떤 OTT에서 봤는지
-
+    ott    = data.get("ott", "")
     if not author or not text or rating is None:
         return jsonify({"error": "author, text, rating 필수"}), 400
     if not isinstance(rating, (int, float)) or not (1 <= rating <= 5):
         return jsonify({"error": "rating은 1~5 사이"}), 400
-
     key = f"{media_type}_{content_id}"
     if key not in REVIEWS:
         REVIEWS[key] = []
-
-    review = {
-        "id":      len(REVIEWS[key]) + 1,
-        "author":  author,
-        "text":    text,
-        "rating":  rating,
-        "ott":     ott,
-        "source":  "site",
-    }
+    review = {"id": len(REVIEWS[key]) + 1, "author": author, "text": text, "rating": rating, "ott": ott}
     REVIEWS[key].append(review)
     return jsonify(review), 201
 
 @app.route("/api/reviews/<media_type>/<int:content_id>/<int:review_id>", methods=["DELETE"])
 def delete_site_review(media_type, content_id, review_id):
     key = f"{media_type}_{content_id}"
-    reviews = REVIEWS.get(key, [])
-    for i, r in enumerate(reviews):
+    for i, r in enumerate(REVIEWS.get(key, [])):
         if r["id"] == review_id:
-            reviews.pop(i)
+            REVIEWS[key].pop(i)
             return jsonify({"message": "deleted"}), 200
     return jsonify({"error": "Not found"}), 404
 

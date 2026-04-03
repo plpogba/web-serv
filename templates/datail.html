@@ -141,9 +141,20 @@ let tmdbReviews   = [];
 
 // ── 상세 정보 로드 ──
 async function loadDetail() {
-  const res  = await fetch(`/api/content/${MEDIA_TYPE}/${CONTENT_ID}`);
-  if (!res.ok) { document.getElementById('detail-hero').innerHTML = '<div style="color:#e55">콘텐츠를 불러올 수 없습니다.</div>'; return; }
-  const d = await res.json();
+  let d;
+  try {
+    const res = await fetch(`/api/content/${MEDIA_TYPE}/${CONTENT_ID}`);
+    d = await res.json();
+    if (!res.ok || d.error) {
+      document.getElementById('detail-hero').innerHTML =
+        `<div style="color:#e55;padding:2rem;">⚠️ ${d.error || '콘텐츠를 불러올 수 없습니다.'}</div>`;
+      return;
+    }
+  } catch(e) {
+    document.getElementById('detail-hero').innerHTML =
+      '<div style="color:#e55;padding:2rem;">⚠️ 서버 연결 오류가 발생했습니다.</div>';
+    return;
+  }
 
   // 배경
   if (d.backdrop) document.getElementById('detail-bg').style.backgroundImage = `url(${d.backdrop})`;
