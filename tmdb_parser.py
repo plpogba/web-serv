@@ -128,21 +128,35 @@ class TmdbParser:
 
     def parse_detail(self, content_id: int, media_type: str,
                      detail: Dict[str, Any], providers_raw: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        data = detail or {}
-        return {
-            "id":           content_id,
-            "media_type":   media_type,
-            "title":        data.get("title") or data.get("name") or "제목 없음",
-            "tagline":      data.get("tagline") or "",
-            "overview":     data.get("overview") or "줄거리 정보 없음",
-            "poster":       self.img_url(data.get("poster_path")),
-            "backdrop":     self.img_url(data.get("backdrop_path"), "w1280"),
-            "rating":       self._safe_round(data.get("vote_average")),
-            "vote_count":   data.get("vote_count") or 0,
-            "release":      data.get("release_date") or data.get("first_air_date") or "",
-            "runtime":      self.parse_runtime(data),
-            "genres":       self.parse_genres(data),
-            "cast":         self.parse_cast(data),
-            "providers":    self.parse_providers(providers_raw),
-            "tmdb_reviews": self.parse_reviews(data),
-        }
+        try:
+            data = detail or {}
+            return {
+                "id":           content_id,
+                "media_type":   media_type,
+                "title":        data.get("title") or data.get("name") or "제목 없음",
+                "tagline":      data.get("tagline") or "",
+                "overview":     data.get("overview") or "줄거리 정보 없음",
+                "poster":       self.img_url(data.get("poster_path")),
+                "backdrop":     self.img_url(data.get("backdrop_path"), "w1280"),
+                "rating":       self._safe_round(data.get("vote_average")),
+                "vote_count":   data.get("vote_count") or 0,
+                "release":      data.get("release_date") or data.get("first_air_date") or "",
+                "runtime":      self.parse_runtime(data),
+                "genres":       self.parse_genres(data),
+                "cast":         self.parse_cast(data),
+                "providers":    self.parse_providers(providers_raw),
+                "tmdb_reviews": self.parse_reviews(data),
+            }
+        except Exception as e:
+            # 파싱 오류 시 기본값 반환
+            return {
+                "id": content_id,
+                "media_type": media_type,
+                "title": "파싱 오류",
+                "overview": f"데이터 파싱 중 오류 발생: {str(e)}",
+                "rating": 0.0,
+                "genres": [],
+                "cast": [],
+                "providers": [],
+                "tmdb_reviews": [],
+            }

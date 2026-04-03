@@ -1,22 +1,22 @@
 # UR-09 delete_review() 테스트
 import pytest
 import json
-from app import app, REVIEWS
+from app import app
+from review_repository import ReviewRepository, ContentKey
 
 @pytest.fixture
 def client():
     app.config["TESTING"] = True
-    REVIEWS.clear()
-    REVIEWS.extend([
-        {"id": 1, "movie_id": 1, "content": "Good!",    "rating": 5},
-        {"id": 2, "movie_id": 1, "content": "Bad!",     "rating": 2},
-    ])
+    repo = ReviewRepository()
+    key = ContentKey("movie", 1)
+    repo.add(key, {"author": "Test1", "text": "Good!", "rating": 5})
+    repo.add(key, {"author": "Test2", "text": "Bad!", "rating": 2})
     with app.test_client() as c:
         yield c
 
 def test_delete_review_success(client):
     """정상 삭제: 존재하는 리뷰 삭제 시 200 반환"""
-    res = client.delete("/api/reviews/1")
+    res = client.delete("/api/reviews/movie/1/1")
     assert res.status_code == 200
     data = json.loads(res.data)
     assert "deleted" in data["message"].lower() or "success" in data["message"].lower()

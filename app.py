@@ -8,6 +8,13 @@ import urllib.parse
 import urllib.error
 import json
 import ssl
+import logging
+
+app = Flask(__name__)
+
+# 로깅 설정
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -45,9 +52,11 @@ def tmdb_get(path, extra_params=None):
             data = json.loads(res.read().decode("utf-8"))
             # TMDB 오류 응답 체크 (status_code 필드가 있으면 API 오류)
             if "status_code" in data and data.get("status_code") != 1:
+                logger.error(f"TMDB API error: {data}")
                 return None
             return data
-    except Exception:
+    except Exception as e:
+        logger.error(f"TMDB request failed: {str(e)}")
         return None
 
 def safe_runtime(detail):
@@ -142,27 +151,44 @@ def api_browse():
 
 @app.route("/api/content/<media_type>/<int:content_id>")
 def api_content_detail(media_type, content_id):
+    logger.info(f"Requesting content detail: {media_type}/{content_id}")
     try:
         if media_type not in HANDLERS:
+            logger.error(f"Invalid media_type: {media_type}")
             return jsonify({"error": "잘못된 media_type"}), 400
 
-        # 기본 정보 (credits, reviews 함께 요청)
-        detail = tmdb_get(
-            f"/{media_type}/{content_id}",
-            {"append_to_response": "credits,reviews"}
-        )
+        # 기본 정보
+        logger.info("Fetching detail from TMDB")
+        detail = tmdb_get(f"/{media_type}/{content_id}")
         if not detail:
+            logger.error("Detail not found")
             return jsonify({"error": "콘텐츠를 찾을 수 없습니다."}), 404
 
+        # credits 정보
+        logger.info("Fetching credits from TMDB")
+        credits_data = tmdb_get(f"/{media_type}/{content_id}/credits")
+        if credits_data:
+            detail["credits"] = credits_data
+
+        # reviews 정보
+        logger.info("Fetching reviews from TMDB")
+        reviews_data = tmdb_get(f"/{media_type}/{content_id}/reviews")
+        if reviews_data:
+            detail["reviews"] = reviews_data
+
         # OTT 편성
+        logger.info("Fetching providers from TMDB")
         providers_data = tmdb_get(f"/{media_type}/{content_id}/watch/providers")
 
         # 파서로 데이터 변환
+        logger.info("Parsing data")
         result = parser.parse_detail(content_id, media_type, detail, providers_data)
 
+        logger.info("Returning result")
         return jsonify(result)
 
     except Exception as e:
+        logger.error(f"Error in api_content_detail: {str(e)}", exc_info=True)
         return jsonify({"error": f"서버 오류: {str(e)}"}), 500
 
 @app.route("/api/genres/<media_type>")
@@ -216,4 +242,4 @@ def delete_site_review(media_type, content_id, review_id):
     return jsonify({"error": "Not found"}), 404
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="0.0.0.0", port=5002, debug=True)
