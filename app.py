@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify, render_template
+from review_repository import ReviewRepository
+from discover_params import DiscoverParams
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -24,7 +26,7 @@ OTT_PROVIDERS = {
     2:   {"name": "Apple TV+",    "color": "#555555"},
 }
 
-REVIEWS = {}  # { "movie_123": [{id, author, rating, text, ott}] }
+review_repo = ReviewRepository()
 
 # ─────────────────────────────────────────
 #  SSL 컨텍스트 (인증서 오류 방지)
@@ -157,20 +159,9 @@ def api_browse():
     try:
         if query:
             data = tmdb_get("/search/multi", {"query": query, "page": page})
-        elif ott:
-            data = tmdb_get(f"/discover/{media_type}", {
-                "with_watch_providers": ott,
-                "watch_region": "KR",
-                "with_genres": genre,
-                "page": page,
-                "sort_by": "popularity.desc",
-            })
         else:
-            data = tmdb_get(f"/discover/{media_type}", {
-                "with_genres": genre,
-                "page": page,
-                "sort_by": "popularity.desc",
-            })
+            params = DiscoverParams(genre=genre, page=page, ott=ott)
+            data = tmdb_get(f"/discover/{media_type}", params.to_dict())
 
         if not data:
             return jsonify({"results": [], "total_pages": 0})
@@ -259,8 +250,7 @@ def api_genres(media_type):
 
 @app.route("/api/reviews/<media_type>/<int:content_id>", methods=["GET"])
 def get_site_reviews(media_type, content_id):
-    key = f"{media_type}_{content_id}"
-    return jsonify(REVIEWS.get(key, []))
+    return jsonify(review_repo.get(media_type, content_id))
 
 @app.route("/api/reviews/<media_type>/<int:content_id>", methods=["POST"])
 def create_site_review(media_type, content_id):
@@ -275,20 +265,15 @@ def create_site_review(media_type, content_id):
         return jsonify({"error": "author, text, rating 필수"}), 400
     if not isinstance(rating, (int, float)) or not (1 <= rating <= 5):
         return jsonify({"error": "rating은 1~5 사이"}), 400
-    key = f"{media_type}_{content_id}"
-    if key not in REVIEWS:
-        REVIEWS[key] = []
-    review = {"id": len(REVIEWS[key]) + 1, "author": author, "text": text, "rating": rating, "ott": ott}
-    REVIEWS[key].append(review)
+    review = review_repo.add(media_type, content_id, {
+        "author": author, "text": text, "rating": rating, "ott": ott
+    })
     return jsonify(review), 201
 
 @app.route("/api/reviews/<media_type>/<int:content_id>/<int:review_id>", methods=["DELETE"])
 def delete_site_review(media_type, content_id, review_id):
-    key = f"{media_type}_{content_id}"
-    for i, r in enumerate(REVIEWS.get(key, [])):
-        if r["id"] == review_id:
-            REVIEWS[key].pop(i)
-            return jsonify({"message": "deleted"}), 200
+    if review_repo.delete(media_type, content_id, review_id):
+        return jsonify({"message": "deleted"}), 200
     return jsonify({"error": "Not found"}), 404
 
 if __name__ == "__main__":
