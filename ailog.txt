@@ -1,0 +1,549 @@
+AI collaboration log:
+-->api_content_detail()에서 srp를 위반하는데 이를 refactor할수있는 전략을 5가지 제안해줘
+
+Bloater — Large Class / Long Method (SRP 위반)
+전략 1 — Extract Function (함수 추출)
+가장 단순한 접근. 각 책임을 독립 함수로 분리합니다.
+
+python
+
+출연진 파싱 → 별도 함수
+def parse_cast(detail):
+cast = []
+for c in (detail.get("credits") or {}).get("cast", [])[:10]:
+cast.append({
+"name": c.get("name", ""),
+"character": c.get("character", ""),
+"photo": TMDB_IMG_BASE + c["profile_path"] if c.get("profile_path") else None,
+})
+return cast
+
+TMDB 리뷰 파싱 → 별도 함수
+def parse_tmdb_reviews(detail):
+reviews = []
+for r in (detail.get("reviews") or {}).get("results", [])[:5]:
+content_text = r.get("content", "")
+reviews.append({
+"author": r.get("author", "익명"),
+"content": content_text[:400] + ("..." if len(content_text) > 400 else ""),
+"rating": (r.get("author_details") or {}).get("rating"),
+})
+return reviews
+
+응답 조립 → 별도 함수
+def build_content_response(content_id, media_type, detail, cast, providers, tmdb_reviews):
+return {
+"id": content_id,
+"title": detail.get("title") or detail.get("name") or "제목 없음",
+"cast": cast,
+"providers": providers,
+"tmdb_reviews": tmdb_reviews,
+# ...
+}
+
+라우트 함수는 조율만 담당
+@app.route("/api/content/<media_type>/int:content_id")
+def api_content_detail(media_type, content_id):
+detail = tmdb_get(f"/{media_type}/{content_id}", {"append_to_response": "credits,reviews"})
+cast = parse_cast(detail)
+reviews = parse_tmdb_reviews(detail)
+providers = get_providers(content_id, media_type)
+return jsonify(build_content_response(content_id, media_type, detail, cast, providers, reviews))
+
+
+**장점** 즉시 적용 가능, 변경 범위 최소  
+**단점** 함수들이 여전히 같은 파일에 있어 근본적 구조 개선은 아님
+
+---
+
+## 전략 2 — Service Layer 분리 (계층 분리)
+
+라우트(Controller)와 비즈니스 로직(Service)을 파일 단위로 분리합니다.
+cinereview/
+├── app.py # 라우트만 (Controller)
+├── services/
+│ ├── tmdb_service.py # TMDB API 호출 담당
+│ └── content_service.py # 데이터 조합 담당
+
+python
+
+services/tmdb_service.py
+class TmdbService:
+def get_detail(self, media_type, content_id):
+return tmdb_get(f"/{media_type}/{content_id}",
+{"append_to_response": "credits,reviews"})
+
+def get_providers(self, media_type, content_id):
+    data = tmdb_get(f"/{media_type}/{content_id}/watch/providers")
+    # ... OTT 파싱 로직
+services/content_service.py
+class ContentService:
+def init(self, tmdb: TmdbService):
+self.tmdb = tmdb # DIP 적용 — 추상에 의존
+
+def get_content_detail(self, media_type, content_id):
+    detail    = self.tmdb.get_detail(media_type, content_id)
+    cast      = self._parse_cast(detail)
+    reviews   = self._parse_reviews(detail)
+    providers = self.tmdb.get_providers(media_type, content_id)
+    return self._build_response(detail, cast, reviews, providers)
+
+def _parse_cast(self, detail): ...
+def _parse_reviews(self, detail): ...
+def _build_response(self, ...): ...
+app.py (라우트만 남음)
+content_service = ContentService(TmdbService())
+
+@app.route("/api/content/<media_type>/int:content_id")
+def api_content_detail(media_type, content_id):
+result = content_service.get_content_detail(media_type, content_id)
+return jsonify(result)
+장점 계층이 명확, 테스트 용이 (TmdbService를 Mock으로 교체 가능) 단점 파일/클래스가 늘어나 초기 구조 설계 비용 발생
+
+전략 3 — Parser Class 도입 (책임 집중화)
+TMDB 응답 파싱이라는 책임 하나만 전담하는 클래스를 만듭니다.
+
+python
+
+tmdb_parser.py
+class TmdbParser:
+"""TMDB API 응답 → 내부 도메인 모델 변환 전담"""
+
+def parse_cast(self, detail):
+    return [
+        {
+            "name":      c.get("name", ""),
+            "character": c.get("character", ""),
+            "photo":     self._img_url(c.get("profile_path"), "w185"),
+        }
+        for c in (detail.get("credits") or {}).get("cast", [])[:10]
+    ]
+
+def parse_reviews(self, detail):
+    return [
+        {
+            "author":  r.get("author", "익명"),
+            "content": r.get("content", "")[:400],
+            "rating":  (r.get("author_details") or {}).get("rating"),
+        }
+        for r in (detail.get("reviews") or {}).get("results", [])[:5]
+    ]
+
+def parse_genres(self, detail):
+    return [g["name"] for g in (detail.get("genres") or [])]
+
+def _img_url(self, path, size="w500"):
+    return f"https://image.tmdb.org/t/p/{size}{path}" if path else None
+python
+
+app.py
+parser = TmdbParser()
+
+@app.route("/api/content/<media_type>/int:content_id")
+def api_content_detail(media_type, content_id):
+detail = tmdb_get(...)
+return jsonify({
+"cast": parser.parse_cast(detail),
+"tmdb_reviews": parser.parse_reviews(detail),
+"genres": parser.parse_genres(detail),
+"providers": get_providers(content_id, media_type),
+# ...
+})
+장점 파싱 로직이 한 곳에 집중, 이미지 URL 중복(Smell #3)도 동시 해결 단점 라우트 함수가 여전히 응답 조립 책임을 가짐
+
+전략 4 — Facade Pattern (복잡도 은닉)
+여러 서브시스템(TMDB API, OTT 조회, 파싱)을 단일 인터페이스로 감쌉니다.
+
+python
+
+content_facade.py
+class ContentFacade:
+"""
+외부에서 보기엔 단순한 인터페이스.
+내부적으로 TMDB 호출, 파싱, OTT 조회를 조율.
+"""
+def init(self):
+self._parser = TmdbParser()
+self._ott = OttService()
+
+def get_detail(self, media_type, content_id):
+    raw = tmdb_get(
+        f"/{media_type}/{content_id}",
+        {"append_to_response": "credits,reviews"}
+    )
+    if not raw:
+        return None
+
+    return {
+        "id":           content_id,
+        "media_type":   media_type,
+        "title":        raw.get("title") or raw.get("name"),
+        "overview":     raw.get("overview", ""),
+        "poster":       self._parser.img_url(raw.get("poster_path")),
+        "backdrop":     self._parser.img_url(raw.get("backdrop_path"), "w1280"),
+        "rating":       round(float(raw.get("vote_average") or 0), 1),
+        "genres":       self._parser.parse_genres(raw),
+        "cast":         self._parser.parse_cast(raw),
+        "tmdb_reviews": self._parser.parse_reviews(raw),
+        "providers":    self._ott.get_providers(media_type, content_id),
+    }
+app.py — 라우트는 Facade 호출만
+facade = ContentFacade()
+
+@app.route("/api/content/<media_type>/int:content_id")
+def api_content_detail(media_type, content_id):
+result = facade.get_detail(media_type, content_id)
+if not result:
+return jsonify({"error": "Not found"}), 404
+return jsonify(result)
+
+
+**장점** 라우트 함수가 극도로 단순해짐, 내부 구현 변경이 외부에 영향 없음  
+**단점** Facade 클래스가 또 다시 여러 책임을 가질 위험 (내부 분리 필요)
+
+---
+
+## 전략 5 — Blueprint + Repository Pattern (Flask 구조화)
+
+Flask의 Blueprint로 라우트를 도메인별로 분리하고, 데이터 접근을 Repository로 추상화합니다.
+cinereview/
+├── app.py
+├── blueprints/
+│ ├── content.py # /api/content 라우트
+│ └── review.py # /api/reviews 라우트
+├── repositories/
+│ └── tmdb_repository.py # TMDB 데이터 접근 전담
+└── parsers/
+└── tmdb_parser.py # 응답 파싱 전담
+
+python
+
+repositories/tmdb_repository.py
+class TmdbRepository:
+def find_detail(self, media_type, content_id): ...
+def find_providers(self, media_type, content_id): ...
+def find_trending(self): ...
+def search(self, query, page): ...
+
+blueprints/content.py
+content_bp = Blueprint("content", name)
+repo = TmdbRepository()
+parser = TmdbParser()
+
+@content_bp.route("/api/content/<media_type>/int:content_id")
+def get_detail(media_type, content_id):
+raw = repo.find_detail(media_type, content_id)
+otts = repo.find_providers(media_type, content_id)
+return jsonify(parser.to_detail_response(raw, otts))
+
+app.py — 조립만
+from blueprints.content import content_bp
+from blueprints.review import review_bp
+
+app = Flask(name)
+app.register_blueprint(content_bp)
+app.register_blueprint(review_bp)
+장점 도메인별 완전한 분리, 확장성 최고, 각 계층 독립 테스트 가능 단점 가장 큰 구조 변경, 초기 설계 비용이 높음
+
+--> parser class 도입하기로 결정
+
+3번 parser class 전략을 선택할건데 이에 맞는 pytest test code를 작성해. test code 작성할 때 TMDB 응답 지연 및 타임아웃, TV 시리즈의 runtime 형식 불일치, 특정 데이터 필드 누락 과 같은 엣지 케이스들을 포함하여 작성해
+
+-->리뷰 저장 key를 생성하는 부분에서 primitive obsession 문제가 발생하는데 이를 해결할 전략 5가지 작성해줘
+
+전략 1. 단순 함수 추출 (Extract Function)
+가장 간단한 접근. key 생성 로직을 함수로 분리해 중복을 제거합니다.
+
+python
+def make_review_key(media_type: str, content_id: int) -> str:
+return f"{media_type}_{content_id}"
+
+사용
+key = make_review_key(media_type, content_id)
+REVIEWS.get(key, [])
+✅ 변경 범위 최소 / ❌ 여전히 문자열이라 타입 안전성 없음
+
+전략 2. NamedTuple로 Value Object 정의
+key를 구조화된 객체로 만들고, hash/__eq__를 자동으로 활용합니다.
+
+python
+from typing import NamedTuple
+
+class ContentKey(NamedTuple):
+media_type: str
+content_id: int
+
+사용 — dict key로 바로 사용 가능
+key = ContentKey(media_type, content_id)
+REVIEWS.get(key, [])
+✅ 타입 안전 / ✅ 구조가 명확 / ❌ 문자열 직렬화가 필요하면 별도 처리 필요
+
+전략 3. dataclass + 검증 로직 포함
+media_type 유효성 검사까지 key 객체 안으로 흡수합니다.
+
+python
+from dataclasses import dataclass
+
+@DataClass(frozen=True)
+class ContentKey:
+media_type: str
+content_id: int
+
+def __post_init__(self):
+    if self.media_type not in ("movie", "tv"):
+        raise ValueError(f"Invalid media_type: {self.media_type}")
+잘못된 타입이면 라우트 진입 시 즉시 예외
+key = ContentKey(media_type, content_id)
+✅ 도메인 규칙을 객체 안에 캡슐화 / ✅ 버그를 더 이른 시점에 탐지
+
+전략 4. Repository 패턴으로 저장소 자체를 추상화
+key 개념을 노출하지 않고 저장소가 내부적으로 처리하게 합니다.
+
+python
+class ReviewRepository:
+def init(self):
+self._store: dict = {}
+
+def _key(self, media_type: str, content_id: int) -> str:
+    return f"{media_type}_{content_id}"
+
+def get(self, media_type, content_id):
+    return self._store.get(self._key(media_type, content_id), [])
+
+def add(self, media_type, content_id, review):
+    key = self._key(media_type, content_id)
+    self._store.setdefault(key, []).append(review)
+
+def delete(self, media_type, content_id, review_id):
+    ...
+repo = ReviewRepository()
+✅ key가 완전히 캡슐화 / ✅ 저장 방식 교체 용이 (DB 마이그레이션 등) / ❌ 구조 변경 범위 가장 큼
+
+전략 5. Enum으로 media_type을 타입화 + NamedTuple 결합
+문자열 "movie", "tv"도 primitive obsession이므로 Enum으로 격상하고 key와 결합합니다.
+
+python
+from enum import Enum
+from typing import NamedTuple
+
+class MediaType(Enum):
+MOVIE = "movie"
+TV = "tv"
+
+class ContentKey(NamedTuple):
+media_type: MediaType
+content_id: int
+
+라우트에서
+media = MediaType(media_type) # 유효하지 않으면 ValueError
+key = ContentKey(media, content_id)
+REVIEWS.get(key, [])
+✅ media_type 자체도 타입 안전 / ✅ 오타로 인한 버그 원천 차단 / ❌ 기존 문자열 기반 라우트와 변환 레이어 필요
+
+-->4번 전략을 선택할 거야 이를 바탕으로 app.py를 수정해줘
+
+-->api_browse의 if/elif 분기에서 TMDB를 중복 호출하는 duplicated code가 elif와 else 분기가 page, with_genres, sort_by 파라미터를 완전히 동일하게 반복하는 문제가 있는 데 이를 수정할 전략을 5가지 제안해줘
+
+5번 전략을 선택할건데, pytest test case를 작성해주는데 (page 파라미터의 타입 불일치, 범위초과 ), (다중 장르 연산자를 사용할 때, TMDB는 여러 ID를 보낼 때 쉼표(,)를 쓰면 AND 연산, 파이프(|)를 쓰면 OR 연산으로 처리하는 문제),(OTT 필터링 시 'Monetization Type' 누락문제)의 엣지케이스를 포함하는 테스트 코드를 작성해
+
+라우트 함수가 TMDB 응답 딕셔너리의 내부 구조를 직접 파헤치고 있습니다. 이 데이터 파싱 로직은 별도의 TmdbParser 클래스 또는 함수 안에 있어야 할 책임입니다. Coupler — Feature Envy
+위치: api_content_detail() 내 출연진/리뷰 파싱 로직
+
+-->
+
+—> content_detail()
+if media_type not in ("movie", "tv"):  ...
+
+api_content_detail()
+if media_type not in ("movie", "tv"):  ...
+
+api_browse()
+data = tmdb_get(f"/discover/{media_type}", ...)  # tv/movie 처리 방식이 달라서
+media_type에 새로운 타입(예: "anime", "documentary")이 추가될 때마다 조건문이 있는 모든 곳을 찾아 수정해야 하는 OCP를 위반하는 문제가 있는데 이를 해결할 수 있는 전략 5가지 제시해줘
+
+전략 1. 상수 집합으로 중앙화 (Constant Set)
+가장 단순한 접근. 유효한 타입을 한 곳에 정의하고 모든 검증이 이를 참조합니다.
+
+python
+
+media_type.py
+VALID_MEDIA_TYPES = {"movie", "tv"}
+
+def is_valid(media_type: str) -> bool:
+return media_type in VALID_MEDIA_TYPES
+
+python
+
+app.py — 모든 검증이 동일한 소스 참조
+from media_type import is_valid, VALID_MEDIA_TYPES
+
+if not is_valid(media_type):
+return jsonify({"error": "잘못된 media_type"}), 400
+새 타입 추가 시 VALID_MEDIA_TYPES에 문자열 하나만 추가하면 됩니다.
+✅ 변경 범위 최소 / ✅ 즉시 적용 가능 / ❌ 타입별로 동작이 달라야 할 때 확장 불가
+
+전략 2. Enum으로 타입 격상
+문자열 자체를 타입 안전한 객체로 만들어 오타와 잘못된 값을 컴파일 시점에 차단합니다.
+
+python
+
+media_type.py
+from enum import Enum
+
+class MediaType(Enum):
+MOVIE = "movie"
+TV = "tv"
+
+@classmethod
+def from_str(cls, value: str) -> "MediaType":
+    try:
+        return cls(value)
+    except ValueError:
+        raise ValueError(f"지원하지 않는 media_type: '{value}'")
+python
+
+app.py
+from media_type import MediaType
+
+media = MediaType.from_str(media_type) # 잘못된 값이면 즉시 예외
+data = tmdb_get(f"/discover/{media.value}", ...)
+새 타입 추가 시 MediaType에 멤버 하나만 추가합니다.
+✅ 타입 안전 / ✅ IDE 자동완성 지원 / ❌ 타입별로 동작이 달라지는 경우 분기가 남음
+
+전략 3. 타입별 설정을 Registry로 관리
+타입마다 동작 방식이 다를 때(예: discover 경로, 기본값 등) 설정을 딕셔너리로 등록합니다. 새 타입은 딕셔너리에 항목만 추가하면 기존 코드는 무변경입니다.
+
+python
+
+media_type.py
+from dataclasses import dataclass
+
+@DataClass(frozen=True)
+class MediaTypeConfig:
+discover_path: str
+genre_path: str
+default_sort: str = "popularity.desc"
+
+MEDIA_TYPE_REGISTRY = {
+"movie": MediaTypeConfig(
+discover_path = "/discover/movie",
+genre_path = "/genre/movie/list",
+),
+"tv": MediaTypeConfig(
+discover_path = "/discover/tv",
+genre_path = "/genre/tv/list",
+),
+}
+
+def get_config(media_type: str) -> MediaTypeConfig:
+if media_type not in MEDIA_TYPE_REGISTRY:
+raise ValueError(f"지원하지 않는 media_type: '{media_type}'")
+return MEDIA_TYPE_REGISTRY[media_type]
+
+python
+
+app.py — "anime" 추가 시 MEDIA_TYPE_REGISTRY에 항목만 추가
+config = get_config(media_type)
+data = tmdb_get(config.discover_path, params.to_dict())
+✅ 설정 추가만으로 확장 / ✅ 타입별 동작 차이를 데이터로 표현 / ❌ 동작이 아닌 로직 분기가 필요한 경우 한계
+
+전략 4. Strategy 패턴으로 타입별 동작 캡슐화
+타입마다 TMDB 호출 방식이 완전히 달라지는 경우, 각 타입을 별도 클래스로 분리하고 동일한 인터페이스를 구현합니다.
+
+python
+
+media_type.py
+from abc import ABC, abstractmethod
+
+class MediaTypeHandler(ABC):
+@AbstractMethod
+def discover_path(self) -> str: ...
+
+@abstractmethod
+def genre_path(self) -> str: ...
+
+def is_valid(self) -> bool:
+    return True
+class MovieHandler(MediaTypeHandler):
+def discover_path(self): return "/discover/movie"
+def genre_path(self): return "/genre/movie/list"
+
+class TvHandler(MediaTypeHandler):
+def discover_path(self): return "/discover/tv"
+def genre_path(self): return "/genre/tv/list"
+
+HANDLERS: dict[str, MediaTypeHandler] = {
+"movie": MovieHandler(),
+"tv": TvHandler(),
+}
+
+def get_handler(media_type: str) -> MediaTypeHandler:
+handler = HANDLERS.get(media_type)
+if not handler:
+raise ValueError(f"지원하지 않는 media_type: '{media_type}'")
+return handler
+
+python
+
+app.py — 새 타입은 Handler 클래스 하나 + HANDLERS 등록만으로 완료
+handler = get_handler(media_type)
+data = tmdb_get(handler.discover_path(), params.to_dict())
+✅ 타입별 로직이 완전히 분리 / ✅ OCP 완벽 준수 / ❌ 타입마다 클래스 하나씩 필요
+
+전략 5. Flask URL Converter로 라우트 레벨에서 차단
+검증을 라우트 함수 안이 아닌 Flask URL 파싱 단계로 밀어올립니다. 잘못된 타입은 라우트 함수에 진입조차 못하고 404로 처리됩니다.
+
+python
+
+media_type.py
+from werkzeug.routing import BaseConverter, ValidationError
+
+VALID_MEDIA_TYPES = {"movie", "tv"}
+
+class MediaTypeConverter(BaseConverter):
+def to_python(self, value: str) -> str:
+if value not in VALID_MEDIA_TYPES:
+raise ValidationError(f"지원하지 않는 media_type: {value}")
+return value
+
+def to_url(self, value: str) -> str:
+    return value
+python
+
+app.py
+from media_type import MediaTypeConverter
+
+app.url_map.converters["media_type"] = MediaTypeConverter
+
+라우트에서 <media_type:media_type> 으로 선언
+@app.route("/content/<media_type:media_type>/int:content_id")
+def content_detail(media_type, content_id):
+# if media_type not in ("movie", "tv") 검증 코드 완전 제거
+return render_template("detail.html", ...)
+새 타입 추가 시 VALID_MEDIA_TYPES에 문자열만 추가하면 모든 라우트에 자동 적용됩니다.
+✅ 검증 코드가 라우트 함수에서 완전히 사라짐 / ✅ Flask 레벨에서 일관성 보장 / ❌ Flask 내부 동작 이해 필요
+
+4번 전략을 선택하여 별개의 .py 파일로 작성해주고,  pytest test를 작성해주는데 TMDB 'person' 타입 유입으로 인한 서비스 중단 (The "Person" Crash), 대소문자 및 공백 처리 누락 (Case-Sensitivity & Sanitization), 글로벌 딕셔너리의 가변성 위험 (Mutable Global Registry)의 엣지 케이스들을 포함한 테스트 파일을 작성해줘
+
+Decision & Review Process ->
+
+[전략 3] Parser Class 도입 (SRP 위반 해결)
+변경의 국소화: 데이터 가공 규칙(글자 수 제한, 이미지 URL 조립 등)이 바뀌어도 라우트 함수는 건드릴 필요 없이 파서만 수정하면 되도록 격리함.
+parser class 도입을 통해 feature envy 문제까지 해결할 수 있음
+테스트 독립성: 실제 API 호출 없이도 특정 JSON 데이터를 넣었을 때 가공 로직이 의도대로 작동하는지 단위 테스트(Unit Test)를 수행하기 위함임.
+
+[전략 5] Repository Pattern 도입 (DRY 위반 해결)
+중복 제거(DRY): movie와 tv 목록 호출 시 공통으로 사용하는 파라미터 조립 로직을 중앙화하여 코드 양을 줄이고 복사·붙여넣기로 인한 실수를 방지함.
+데이터 소스 추상화: 라우트 함수가 TMDB API의 구체적인 쿼리 구조를 알 필요 없게 만들어, 나중에 데이터베이스나 캐싱 레이어로 교체하더라도 비즈니스 로직을 보호하기 위함임.
+
+[전략 4] Strategy Pattern 도입 (OCP 위반 해결)
+확장성(OCP): 새로운 미디어 타입(애니메이션 등) 추가 시 기존의 if/elif 조건문을 수정하는 대신, 새 클래스만 추가하여 등록하면 되는 유연한 구조를 확보함.
+방어적 설계: 대소문자나 공백 등 사용자 입력 오류를 핸들러 획득 단계에서 원천 차단하고, 내부 레지스트리를 외부 조작으로부터 보호(Encapsulation)하여 시스템 안정성을 높이기 위함임.
+
+[전략 4] Repository Pattern 도입
+
+데이터 캡슐화: media_type과 content_id를 조합해 키(Key)를 생성하는 상세 로직을 외부 라우트 함수가 알 필요 없도록 저장소 내부로 숨김 처리함.
+
+유지보수 효율성: 리뷰를 저장하는 방식이 단순 딕셔너리에서 Redis나 DB로 변경되더라도, 라우트 코드 수정 없이 레포지토리 클래스만 교체하면 되는 유연성을 확보함.
+
+도메인 로직 집중: "키를 어떻게 만들 것인가"라는 파편화된 고민을 레포지토리 한 곳으로 몰아넣어, 서비스 전체의 데이터 관리 일관성을 높이기 위함임.

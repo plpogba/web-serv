@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from review_repository import ReviewRepository
+from review_repository import ReviewRepository, ContentKey
 from discover_params import DiscoverParams
 from tmdb_parser import TmdbParser
 from media_type_handler import HANDLERS
@@ -87,7 +87,7 @@ def browse():
 
 @app.route("/content/<media_type>/<int:content_id>")
 def content_detail(media_type, content_id):
-    if media_type not in ("movie", "tv"):
+    if media_type not in HANDLERS:
         return render_template("error.html", code=400, msg="잘못된 콘텐츠 유형입니다."), 400
     return render_template("detail.html",
                            content_id=content_id,
@@ -112,6 +112,8 @@ def api_trending():
 @app.route("/api/browse")
 def api_browse():
     media_type = request.args.get("type", "movie")
+    if media_type not in HANDLERS:
+        return jsonify({"error": "잘못된 media_type"}), 400
     genre      = request.args.get("genre", "")
     ott        = request.args.get("ott", "")
     query      = request.args.get("q", "").strip()
@@ -141,7 +143,7 @@ def api_browse():
 @app.route("/api/content/<media_type>/<int:content_id>")
 def api_content_detail(media_type, content_id):
     try:
-        if media_type not in ("movie", "tv"):
+        if media_type not in HANDLERS:
             return jsonify({"error": "잘못된 media_type"}), 400
 
         # 기본 정보 (credits, reviews 함께 요청)
@@ -165,6 +167,8 @@ def api_content_detail(media_type, content_id):
 
 @app.route("/api/genres/<media_type>")
 def api_genres(media_type):
+    if media_type not in HANDLERS:
+        return jsonify({"error": "잘못된 media_type"}), 400
     data = tmdb_get(f"/genre/{media_type}/list")
     if not data:
         return jsonify([])
@@ -176,10 +180,15 @@ def api_genres(media_type):
 
 @app.route("/api/reviews/<media_type>/<int:content_id>", methods=["GET"])
 def get_site_reviews(media_type, content_id):
-    return jsonify(review_repo.get(media_type, content_id))
+    if media_type not in HANDLERS:
+        return jsonify({"error": "잘못된 media_type"}), 400
+    key = ContentKey(media_type, content_id)
+    return jsonify(review_repo.get(key))
 
 @app.route("/api/reviews/<media_type>/<int:content_id>", methods=["POST"])
 def create_site_review(media_type, content_id):
+    if media_type not in HANDLERS:
+        return jsonify({"error": "잘못된 media_type"}), 400
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "데이터 없음"}), 400
@@ -191,14 +200,18 @@ def create_site_review(media_type, content_id):
         return jsonify({"error": "author, text, rating 필수"}), 400
     if not isinstance(rating, (int, float)) or not (1 <= rating <= 5):
         return jsonify({"error": "rating은 1~5 사이"}), 400
-    review = review_repo.add(media_type, content_id, {
+    key = ContentKey(media_type, content_id)
+    review = review_repo.add(key, {
         "author": author, "text": text, "rating": rating, "ott": ott
     })
     return jsonify(review), 201
 
 @app.route("/api/reviews/<media_type>/<int:content_id>/<int:review_id>", methods=["DELETE"])
 def delete_site_review(media_type, content_id, review_id):
-    if review_repo.delete(media_type, content_id, review_id):
+    if media_type not in HANDLERS:
+        return jsonify({"error": "잘못된 media_type"}), 400
+    key = ContentKey(media_type, content_id)
+    if review_repo.delete(key, review_id):
         return jsonify({"message": "deleted"}), 200
     return jsonify({"error": "Not found"}), 404
 
