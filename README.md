@@ -119,7 +119,7 @@ eliminating the risk of stale documentation entirely.
 
 ## 📬 Contact
 
-Feel free to reach out via GitHub Issues or email at **snowflower@knu.ac.kr**
+Feel free to reach out via GitHub Issues or email at <kangjinoo@knu.ac.kr>
 
 ---
 
