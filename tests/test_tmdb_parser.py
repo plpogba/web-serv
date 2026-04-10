@@ -6,7 +6,7 @@ import pytest
 import time
 import urllib.error
 from unittest.mock import patch, MagicMock
-from tmdb_parser import TmdbParser
+from app.tmdb_parser import TmdbParser
 
 
 # ─────────────────────────────────────────

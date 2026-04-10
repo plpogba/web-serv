@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify, render_template
-from review_repository import ReviewRepository, ContentKey
-from discover_params import DiscoverParams
-from tmdb_parser import TmdbParser
-from media_type_handler import HANDLERS
+from app.review_repository import ReviewRepository, ContentKey
+from app.discover_params import DiscoverParams
+from app.tmdb_parser import TmdbParser
+from app.media_type_handler import HANDLERS
 import urllib.request
 import urllib.parse
 import urllib.error

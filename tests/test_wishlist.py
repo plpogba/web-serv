@@ -1,7 +1,7 @@
 # UR-07, UR-08 위시리스트 테스트 (add / remove / get)
 import pytest
 import json
-from app import app
+from app.app import app
 
 @pytest.fixture
 def client():

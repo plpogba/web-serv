@@ -1,7 +1,7 @@
 import pytest
 import json
-from app import app
-from review_repository import ReviewRepository, ContentKey
+from app.app import app
+from app.review_repository import ReviewRepository, ContentKey
 
 @pytest.fixture
 def client():

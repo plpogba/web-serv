@@ -1,6 +1,6 @@
 import pytest
 import copy
-from media_type_handler import (
+from app.media_type_handler import (
     get_handler,
     is_valid,
     supported_types,

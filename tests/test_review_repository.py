@@ -1,5 +1,5 @@
 import pytest
-from review_repository import ReviewRepository, ContentKey
+from app.review_repository import ReviewRepository, ContentKey
 
 @pytest.fixture
 def repo():

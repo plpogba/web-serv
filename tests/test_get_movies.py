@@ -1,7 +1,7 @@
 import pytest
 import json
 from unittest.mock import patch
-from app import app
+from app.app import app
 
 # 테스트용 client 픽스처 (conftest.py에 있다면 생략 가능)
 @pytest.fixture

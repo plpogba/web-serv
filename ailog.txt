@@ -98,7 +98,7 @@ content_service = ContentService(TmdbService())
 def api_content_detail(media_type, content_id):
 result = content_service.get_content_detail(media_type, content_id)
 return jsonify(result)
-장점 계층이 명확, 테스트 용이 (TmdbService를 Mock으로 교체 가능) 단점 파일/클래스가 늘어나 초기 구조 설계 비용 발생
+장점 계층이 명확, 테스트 용이 (TmdbService를 Mock으로 교체 가능)단점 파일/클래스가 늘어나 초기 구조 설계 비용 발생
 
 전략 3 — Parser Class 도입 (책임 집중화)
 TMDB 응답 파싱이라는 책임 하나만 전담하는 클래스를 만듭니다.
@@ -149,7 +149,7 @@ return jsonify({
 "providers": get_providers(content_id, media_type),
 # ...
 })
-장점 파싱 로직이 한 곳에 집중, 이미지 URL 중복(Smell #3)도 동시 해결 단점 라우트 함수가 여전히 응답 조립 책임을 가짐
+장점 파싱 로직이 한 곳에 집중, 이미지 URL 중복(Smell #3)도 동시 해결단점 라우트 함수가 여전히 응답 조립 책임을 가짐
 
 전략 4 — Facade Pattern (복잡도 은닉)
 여러 서브시스템(TMDB API, OTT 조회, 파싱)을 단일 인터페이스로 감쌉니다.
@@ -243,7 +243,7 @@ from blueprints.review import review_bp
 app = Flask(name)
 app.register_blueprint(content_bp)
 app.register_blueprint(review_bp)
-장점 도메인별 완전한 분리, 확장성 최고, 각 계층 독립 테스트 가능 단점 가장 큰 구조 변경, 초기 설계 비용이 높음
+장점 도메인별 완전한 분리, 확장성 최고, 각 계층 독립 테스트 가능단점 가장 큰 구조 변경, 초기 설계 비용이 높음
 
 --> parser class 도입하기로 결정
 
