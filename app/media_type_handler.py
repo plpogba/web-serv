@@ -2,10 +2,15 @@ from abc import ABC, abstractmethod
 from typing import Type
 
 # ─────────────────────────────────────────
-#  추상 및 구체 핸들러
+#  Abstract and Concrete Handlers
 # ─────────────────────────────────────────
 
 class MediaTypeHandler(ABC):
+    """Abstract base class for media type handlers.
+
+    This class defines the interface for handling different media types 
+    such as movies and TV shows.
+    """
     @property
     @abstractmethod
     def value(self) -> str: ...
@@ -20,29 +25,33 @@ class MediaTypeHandler(ABC):
     def provider_path_suffix(self) -> str: return "/watch/providers"
 
 class MovieHandler(MediaTypeHandler):
+    """Handler class for processing 'movie' media types.
+    """
     @property
     def value(self) -> str: return "movie"
 
 class TvHandler(MediaTypeHandler):
+    """Handler class for processing 'tv' media types.
+    """
     @property
     def value(self) -> str: return "tv"
 
 
 # ─────────────────────────────────────────
-#  Registry (투트랙 방어 아키텍처)
+#  Registry (Two-Track Defense Architecture)
 # ─────────────────────────────────────────
 
-# 1. 내부 로직용 격리 저장소 (Hidden Source of Truth)
-# 테스트나 외부에서 접근할 수 없는 진짜 데이터입니다.
-# 인스턴스 오염을 막기 위해 '클래스(Type)' 자체를 저장합니다.
+# 1. Isolated Storage for Internal Logic (Hidden Source of Truth)
+# This represents the actual data that is inaccessible to tests or external code.
+# Stores the 'Class (Type)' itself to prevent instance contamination.
 _INTERNAL_REGISTRY: dict[str, Type[MediaTypeHandler]] = {
     "movie": MovieHandler,
     "tv": TvHandler,
 }
 
-# 2. 외부 노출용 더미 딕셔너리 (Decoy)
-# 테스트 코드의 ImportError 방지 및 하위 호환성을 위해 제공합니다.
-# 외부에서 이 딕셔너리를 pop() 하거나 새 값을 할당해도 내부 로직에는 영향이 없습니다.
+# 2. Exposed Decoy Dictionary
+# Provided to prevent ImportErrors in test code and maintain backward compatibility.
+# External modifications (e.g., pop() or new assignments) will not affect internal logic.
 _HANDLERS = {
     "movie": MovieHandler(),
     "tv": TvHandler(),
@@ -51,28 +60,49 @@ HANDLERS = _HANDLERS
 
 
 def get_handler(media_type: str) -> MediaTypeHandler:
-    """
-    입력값을 정규화하여 핸들러 인스턴스를 반환합니다.
+    """Normalizes the input and returns a handler instance.
+
+    Args:
+        media_type (str): The media type string.
+
+    Returns:
+        MediaTypeHandler: A handler instance for the corresponding media type.
+
+    Raises:
+        ValueError: If the media_type is not supported.
     """
     sanitized = media_type.strip().lower() if media_type else ""
 
-    # 조작 가능한 _HANDLERS 대신, 안전한 _INTERNAL_REGISTRY를 참조합니다.
+    # Reference the secure _INTERNAL_REGISTRY instead of the manipulatable _HANDLERS.
     handler_class = _INTERNAL_REGISTRY.get(sanitized)
     
     if handler_class is None:
         supported = ", ".join(sorted(_INTERNAL_REGISTRY.keys()))
         raise ValueError(
-            f"지원하지 않는 media_type: '{media_type}'. "
-            f"지원 타입: [{supported}]"
+            f"Unsupported media_type: '{media_type}'. "
+            f"Supported types: [{supported}]"
         )
     
-    # 클래스를 인스턴스화하여 매번 '새로운 객체'를 반환합니다. (Factory 패턴)
+    # Instantiate the class to return a 'fresh object' every time (Factory Pattern).
     return handler_class()
 
 
 def is_valid(media_type: str) -> bool:
+    """Checks if the media type is valid.
+
+    Args:
+        media_type (str): The media type to check.
+
+    Returns:
+        bool: True if valid, False otherwise.
+    """
     sanitized = media_type.strip().lower() if media_type else ""
     return sanitized in _INTERNAL_REGISTRY
 
 def supported_types() -> tuple[str, ...]:
+    """Returns a list of supported media types.
+
+    Returns:
+        tuple[str, ...]: A tuple of supported media type strings.
+    """
     return tuple(_INTERNAL_REGISTRY.keys())

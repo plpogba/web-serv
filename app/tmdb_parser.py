@@ -1,7 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional, List, Dict, Any
 
-# 상수 설정
+# Constant Configuration
 IMG_BASE = "https://image.tmdb.org/t/p"
 VALID_TYPES = ("movie", "tv")
 
@@ -14,13 +14,19 @@ OTT_PROVIDERS = {
 }
 
 class TmdbParser:
-    """
-    TMDB API 응답을 내부 도메인 모델로 변환하는 전담 클래스.
-    부동 소수점 반올림 오차 및 데이터 누락에 대한 방어 로직 포함.
-    """
+    """Dedicated class for converting TMDB API responses into internal domain models.
 
+    Includes defensive logic for floating-point rounding errors and missing data.
+    """
     def _safe_round(self, value: Any) -> float:
-        """사사오입을 적용하여 소수점 첫째 자리까지 반올림"""
+        """Rounds a value to one decimal place using ROUND_HALF_UP.
+
+        Args:
+            value (Any): The value to be rounded.
+
+        Returns:
+            float: The rounded value. Returns 0.0 if conversion fails.
+        """
         try:
             if value is None or value == "":
                 return 0.0
@@ -33,39 +39,61 @@ class TmdbParser:
             return 0.0
 
     def img_url(self, path: Optional[str], size: str = "w500") -> Optional[str]:
-        """이미지 경로 URL 변환"""
+        """Converts an image path into a full TMDB image URL.
+
+        Args:
+            path (Optional[str]): The image path.
+            size (str): Image size. Defaults to "w500".
+
+        Returns:
+            Optional[str]: The complete image URL. Returns None if the path is missing.
+        """
         if not path:
             return None
         return f"{IMG_BASE}/{size}{path}"
 
     def parse_runtime(self, detail: Dict[str, Any]) -> Optional[int]:
-        """
-        TV(episode_run_time)와 영화(runtime)를 구분하여 유효한 런타임 추출.
+        """Extracts valid runtime by distinguishing between TV (episode_run_time) and Movie (runtime).
+
+        Args:
+            detail (Dict[str, Any]): TMDB detail data.
+
+        Returns:
+            Optional[int]: Runtime in minutes. Returns None if extraction fails.
         """
         if not detail:
             return None
 
-        # 1. 일반 runtime 필드 먼저 확인 (영화 우선)
+        # 1. Check standard runtime field (Priority: Movie)
         rt = detail.get("runtime")
         if isinstance(rt, int) and rt > 0:
             return rt
 
-        # 2. runtime이 리스트로 들어오는 변칙 케이스 대응
+        # 2. Handle edge cases where runtime is provided as a list
         if isinstance(rt, list) and len(rt) > 0:
-            val = rt[0]
+            val = rt
             if isinstance(val, int) and val > 0:
                 return val
 
-        # 3. TV 시리즈 전용 필드 fallback
+        # 3. Fallback for TV series specific fields
         ert = detail.get("episode_run_time")
         if isinstance(ert, list) and len(ert) > 0:
-            val = ert[0]
+            val = ert
             if isinstance(val, int) and val > 0:
                 return val
 
         return None
 
     def parse_list_item(self, item: Dict[str, Any], media_type: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Converts a TMDB list item into the internal format.
+
+        Args:
+            item (Dict[str, Any]): TMDB item data.
+            media_type (Optional[str]): Media type. Defaults to None.
+
+        Returns:
+            Optional[Dict[str, Any]]: Formatted data. Returns None if the type is invalid.
+        """
         mt = media_type or item.get("media_type", "movie")
         if mt not in VALID_TYPES:
             return None
@@ -73,7 +101,7 @@ class TmdbParser:
         return {
             "id":         item.get("id"),
             "media_type": mt,
-            "title":      item.get("title") or item.get("name") or "제목 없음",
+            "title":      item.get("title") or item.get("name") or "Untitled",
             "overview":   item.get("overview") or "",
             "poster":     self.img_url(item.get("poster_path")),
             "backdrop":   self.img_url(item.get("backdrop_path"), "w1280"),
@@ -84,6 +112,14 @@ class TmdbParser:
         }
 
     def parse_cast(self, detail: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extracts cast information from the credits data.
+
+        Args:
+            detail (Dict[str, Any]): TMDB detail data (including credits).
+
+        Returns:
+            List[Dict[str, Any]]: List of cast members (up to 10).
+        """
         credits = detail.get("credits") or {}
         cast_raw = credits.get("cast") or []
         return [{
@@ -93,32 +129,58 @@ class TmdbParser:
         } for c in cast_raw[:10]]
 
     def parse_reviews(self, detail: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Converts TMDB review data into the internal format.
+
+        Args:
+            detail (Dict[str, Any]): TMDB detail data (including reviews).
+
+        Returns:
+            List[Dict[str, Any]]: List of reviews (up to 5, content limited to 400 chars).
+        """
         reviews_obj = detail.get("reviews") or {}
         reviews_raw = reviews_obj.get("results") or []
         result = []
         for r in reviews_raw[:5]:
             text = r.get("content") or ""
             result.append({
-                "author":  r.get("author") or "익명",
+                "author":  r.get("author") or "Anonymous",
                 "content": text[:400] + ("..." if len(text) > 400 else ""),
                 "rating":  (r.get("author_details") or {}).get("rating"),
             })
         return result
 
     def parse_genres(self, detail: Dict[str, Any]) -> List[str]:
+        """Extracts genre data as a list of strings.
+
+        Args:
+            detail (Dict[str, Any]): TMDB detail data.
+
+        Returns:
+            List[str]: List of genre names.
+        """
         genres_raw = detail.get("genres") or []
         return [g["name"] for g in genres_raw if isinstance(g, dict) and g.get("name")]
 
     def parse_providers(self, providers_raw: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Converts OTT provider data into the internal format.
+
+        Args:
+            providers_raw (Optional[Dict[str, Any]]): Raw TMDB provider data.
+
+        Returns:
+            List[Dict[str, Any]]: List of providers (flatrate, buy, rent for KR region).
+        """
         if not providers_raw:
             return []
         results = providers_raw.get("results") or {}
         kr_data = results.get("KR") or {}
+        # Combine flatrate, buy, and rent options
         combined = (kr_data.get("flatrate") or []) + (kr_data.get("buy") or []) + (kr_data.get("rent") or [])
         
         seen_ids, result = set(), []
         for p in combined:
             pid = p.get("provider_id")
+            # Only include providers defined in OTT_PROVIDERS without duplicates
             if pid in OTT_PROVIDERS and pid not in seen_ids:
                 seen_ids.add(pid)
                 info = OTT_PROVIDERS[pid].copy()
@@ -128,14 +190,25 @@ class TmdbParser:
 
     def parse_detail(self, content_id: int, media_type: str,
                      detail: Dict[str, Any], providers_raw: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Transforms content detail into a complete internal format.
+
+        Args:
+            content_id (int): Content ID.
+            media_type (str): Media type.
+            detail (Dict[str, Any]): TMDB detail data.
+            providers_raw (Optional[Dict[str, Any]]): Raw provider data.
+
+        Returns:
+            Dict[str, Any]: Fully formatted detail data.
+        """
         try:
             data = detail or {}
             return {
                 "id":           content_id,
                 "media_type":   media_type,
-                "title":        data.get("title") or data.get("name") or "제목 없음",
+                "title":        data.get("title") or data.get("name") or "Untitled",
                 "tagline":      data.get("tagline") or "",
-                "overview":     data.get("overview") or "줄거리 정보 없음",
+                "overview":     data.get("overview") or "No overview available.",
                 "poster":       self.img_url(data.get("poster_path")),
                 "backdrop":     self.img_url(data.get("backdrop_path"), "w1280"),
                 "rating":       self._safe_round(data.get("vote_average")),
@@ -148,12 +221,12 @@ class TmdbParser:
                 "tmdb_reviews": self.parse_reviews(data),
             }
         except Exception as e:
-            # 파싱 오류 시 기본값 반환
+            # Return default values in case of parsing errors
             return {
                 "id": content_id,
                 "media_type": media_type,
-                "title": "파싱 오류",
-                "overview": f"데이터 파싱 중 오류 발생: {str(e)}",
+                "title": "Parsing Error",
+                "overview": f"An error occurred while parsing data: {str(e)}",
                 "rating": 0.0,
                 "genres": [],
                 "cast": [],
