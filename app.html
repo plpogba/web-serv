@@ -37,23 +37,1643 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 </section>
-<section id="app-app-module">
-<h2>app.app module<a class="headerlink" href="#app-app-module" title="Link to this heading">¶</a></h2>
+<section id="module-app.app">
+<span id="app-app-module"></span><h2>app.app module<a class="headerlink" href="#module-app.app" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.api_browse">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">api_browse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.app.api_browse" title="Link to this definition">¶</a></dt>
+<dd><p>Searches or discovers content.</p>
+<dl class="simple">
+<dt>Query Parameters:</dt><dd><p>type (str): Media type (“movie” or “tv”).
+genre (str): Genre ID.
+ott (str): OTT provider ID.
+q (str): Search query string.
+page (str): Page number.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON response.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>flask.Response</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/api/browse:</dt><dd><dl>
+<dt>get:</dt><dd><p>summary: Browse or search content
+description: Searches for content or discovers content based on filters.
+parameters:</p>
+<blockquote>
+<div><ul>
+<li><p>name: type
+in: query
+schema:</p>
+<blockquote>
+<div><p>type: string
+enum: [movie, tv]
+default: movie</p>
+</div></blockquote>
+<p>description: Type of media to browse</p>
+</li>
+<li><p>name: genre
+in: query
+schema:</p>
+<blockquote>
+<div><p>type: string</p>
+</div></blockquote>
+<p>description: Genre ID(s) separated by comma</p>
+</li>
+<li><p>name: ott
+in: query
+schema:</p>
+<blockquote>
+<div><p>type: string</p>
+</div></blockquote>
+<p>description: OTT provider ID</p>
+</li>
+<li><p>name: q
+in: query
+schema:</p>
+<blockquote>
+<div><p>type: string</p>
+</div></blockquote>
+<p>description: Search query string</p>
+</li>
+<li><p>name: page
+in: query
+schema:</p>
+<blockquote>
+<div><p>type: string
+default: “1”</p>
+</div></blockquote>
+<p>description: Page number</p>
+</li>
+</ul>
+</div></blockquote>
+<dl>
+<dt>responses:</dt><dd><dl>
+<dt>200:</dt><dd><p>description: List of content with pagination info
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl>
+<dt>results:</dt><dd><p>type: array
+items:</p>
+<blockquote>
+<div><p>$ref: ‘#/components/schemas/ContentItem’</p>
+</div></blockquote>
+</dd>
+<dt>total_pages:</dt><dd><p>type: integer</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>400:</dt><dd><p>description: Invalid media type
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>error:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>500:</dt><dd><p>description: Server error
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>error:</dt><dd><p>type: string</p>
+</dd>
+<dt>results:</dt><dd><p>type: array
+items: {}</p>
+</dd>
+<dt>total_pages:</dt><dd><p>type: integer</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.api_content_detail">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">api_content_detail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">media_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.api_content_detail" title="Link to this definition">¶</a></dt>
+<dd><p>Returns detailed information for a specific content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>media_type</strong> (<em>str</em>) – Media type (“movie” or “tv”).</p></li>
+<li><p><strong>content_id</strong> (<em>int</em>) – Content ID.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON response.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>flask.Response</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/api/content/{media_type}/{content_id}:</dt><dd><dl>
+<dt>get:</dt><dd><p>summary: Get content details
+description: Returns detailed information for a specific movie or TV show.
+parameters:</p>
+<blockquote>
+<div><ul>
+<li><p>name: media_type
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: string
+enum: [movie, tv]</p>
+</div></blockquote>
+<p>description: Type of media</p>
+</li>
+<li><p>name: content_id
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: integer</p>
+</div></blockquote>
+<p>description: TMDB content ID</p>
+</li>
+</ul>
+</div></blockquote>
+<dl>
+<dt>responses:</dt><dd><dl>
+<dt>200:</dt><dd><p>description: Detailed content information
+content:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>application/json:</dt><dd><dl class="simple">
+<dt>schema:</dt><dd><p>$ref: ‘#/components/schemas/ContentDetail’</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>400:</dt><dd><p>description: Invalid media type
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>error:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>404:</dt><dd><p>description: Content not found
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>error:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>500:</dt><dd><p>description: Server error
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>error:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.api_genres">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">api_genres</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">media_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.api_genres" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the list of genres for a media type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>media_type</strong> (<em>str</em>) – Media type (“movie” or “tv”).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON response.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>flask.Response</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/api/genres/{media_type}:</dt><dd><dl>
+<dt>get:</dt><dd><p>summary: Get genres for media type
+description: Returns the list of available genres for movies or TV shows.
+parameters:</p>
+<blockquote>
+<div><ul>
+<li><p>name: media_type
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: string
+enum: [movie, tv]</p>
+</div></blockquote>
+<p>description: Type of media</p>
+</li>
+</ul>
+</div></blockquote>
+<dl>
+<dt>responses:</dt><dd><dl>
+<dt>200:</dt><dd><p>description: List of genres
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: array
+items:</p>
+<blockquote>
+<div><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>id:</dt><dd><p>type: integer</p>
+</dd>
+<dt>name:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>400:</dt><dd><p>description: Invalid media type
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>error:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.api_trending">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">api_trending</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.app.api_trending" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a list of trending content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON response.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>flask.Response</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/api/trending:</dt><dd><dl>
+<dt>get:</dt><dd><p>summary: Get trending content
+description: Returns a list of currently trending movies and TV shows.
+responses:</p>
+<blockquote>
+<div><dl>
+<dt>200:</dt><dd><p>description: List of trending content
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: array
+items:</p>
+<blockquote>
+<div><p>$ref: ‘#/components/schemas/ContentItem’</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.browse">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">browse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.app.browse" title="Link to this definition">¶</a></dt>
+<dd><p>Renders the browse page.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>HTML template.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/browse:</dt><dd><dl>
+<dt>get:</dt><dd><p>summary: Get browse page
+description: Renders the browse page for content discovery.
+responses:</p>
+<blockquote>
+<div><dl>
+<dt>200:</dt><dd><p>description: Browse page HTML
+content:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>text/html:</dt><dd><dl class="simple">
+<dt>schema:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.content_detail">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">content_detail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">media_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.content_detail" title="Link to this definition">¶</a></dt>
+<dd><p>Renders the content detail page.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>media_type</strong> (<em>str</em>) – Media type (“movie” or “tv”).</p></li>
+<li><p><strong>content_id</strong> (<em>int</em>) – Content ID.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(HTML template, status code) or error template.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/content/{media_type}/{content_id}:</dt><dd><dl>
+<dt>get:</dt><dd><p>summary: Get content detail page
+description: Renders the detail page for a specific content item.
+parameters:</p>
+<blockquote>
+<div><ul>
+<li><p>name: media_type
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: string
+enum: [movie, tv]</p>
+</div></blockquote>
+<p>description: Type of media (movie or tv)</p>
+</li>
+<li><p>name: content_id
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: integer</p>
+</div></blockquote>
+<p>description: TMDB content ID</p>
+</li>
+</ul>
+</div></blockquote>
+<dl>
+<dt>responses:</dt><dd><dl>
+<dt>200:</dt><dd><p>description: Content detail page HTML
+content:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>text/html:</dt><dd><dl class="simple">
+<dt>schema:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>400:</dt><dd><p>description: Invalid media type
+content:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>text/html:</dt><dd><dl class="simple">
+<dt>schema:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.create_site_review">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">create_site_review</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">media_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.create_site_review" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a new site review for the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>media_type</strong> (<em>str</em>) – Media type (“movie” or “tv”).</p></li>
+<li><p><strong>content_id</strong> (<em>int</em>) – Content ID.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Request Body:</dt><dd><p>JSON with keys: author (str), text (str), rating (int/float), ott (str, optional).</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON response.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>flask.Response</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/api/reviews/{media_type}/{content_id}:</dt><dd><dl>
+<dt>post:</dt><dd><p>summary: Create a new review
+description: Creates a new user review for a specific content item.
+parameters:</p>
+<blockquote>
+<div><ul>
+<li><p>name: media_type
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: string
+enum: [movie, tv]</p>
+</div></blockquote>
+<p>description: Type of media</p>
+</li>
+<li><p>name: content_id
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: integer</p>
+</div></blockquote>
+<p>description: TMDB content ID</p>
+</li>
+</ul>
+</div></blockquote>
+<dl>
+<dt>requestBody:</dt><dd><p>required: true
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+required:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>author</p></li>
+<li><p>text</p></li>
+<li><p>rating</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>properties:</dt><dd><dl class="simple">
+<dt>author:</dt><dd><p>type: string
+description: Review author name</p>
+</dd>
+<dt>text:</dt><dd><p>type: string
+description: Review content</p>
+</dd>
+<dt>rating:</dt><dd><p>type: number
+minimum: 1
+maximum: 5
+description: Rating from 1 to 5</p>
+</dd>
+<dt>ott:</dt><dd><p>type: string
+description: OTT provider name (optional)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>responses:</dt><dd><dl>
+<dt>201:</dt><dd><p>description: Review created successfully
+content:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>application/json:</dt><dd><dl class="simple">
+<dt>schema:</dt><dd><p>$ref: ‘#/components/schemas/Review’</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>400:</dt><dd><p>description: Invalid input or media type
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>error:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.delete_site_review">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">delete_site_review</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">media_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">review_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.delete_site_review" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes a specific site review for the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>media_type</strong> (<em>str</em>) – Media type (“movie” or “tv”).</p></li>
+<li><p><strong>content_id</strong> (<em>int</em>) – Content ID.</p></li>
+<li><p><strong>review_id</strong> (<em>int</em>) – Review ID.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON response.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>flask.Response</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/api/reviews/{media_type}/{content_id}/{review_id}:</dt><dd><dl>
+<dt>delete:</dt><dd><p>summary: Delete a review
+description: Deletes a specific user review for a content item.
+parameters:</p>
+<blockquote>
+<div><ul>
+<li><p>name: media_type
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: string
+enum: [movie, tv]</p>
+</div></blockquote>
+<p>description: Type of media</p>
+</li>
+<li><p>name: content_id
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: integer</p>
+</div></blockquote>
+<p>description: TMDB content ID</p>
+</li>
+<li><p>name: review_id
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: integer</p>
+</div></blockquote>
+<p>description: Review ID</p>
+</li>
+</ul>
+</div></blockquote>
+<dl>
+<dt>responses:</dt><dd><dl>
+<dt>200:</dt><dd><p>description: Review deleted successfully
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>message:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>400:</dt><dd><p>description: Invalid media type
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>error:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>404:</dt><dd><p>description: Review not found
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>error:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.format_content">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">format_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.format_content" title="Link to this definition">¶</a></dt>
+<dd><p>Converts TMDB item data into the internal format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>item</strong> (<em>dict</em>) – TMDB item data.</p></li>
+<li><p><strong>media_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Media type. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Formatted data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.get_providers">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">get_providers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.get_providers" title="Link to this definition">¶</a></dt>
+<dd><p>Fetches OTT provider information for the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>content_id</strong> (<em>int</em>) – Content ID.</p></li>
+<li><p><strong>media_type</strong> (<em>str</em>) – Media type (“movie” or “tv”).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of providers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.get_site_reviews">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">get_site_reviews</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">media_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.get_site_reviews" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the list of site reviews for the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>media_type</strong> (<em>str</em>) – Media type (“movie” or “tv”).</p></li>
+<li><p><strong>content_id</strong> (<em>int</em>) – Content ID.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON response.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>flask.Response</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/api/reviews/{media_type}/{content_id}:</dt><dd><dl>
+<dt>get:</dt><dd><p>summary: Get site reviews for content
+description: Returns the list of user reviews for a specific content item.
+parameters:</p>
+<blockquote>
+<div><ul>
+<li><p>name: media_type
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: string
+enum: [movie, tv]</p>
+</div></blockquote>
+<p>description: Type of media</p>
+</li>
+<li><p>name: content_id
+in: path
+required: true
+schema:</p>
+<blockquote>
+<div><p>type: integer</p>
+</div></blockquote>
+<p>description: TMDB content ID</p>
+</li>
+</ul>
+</div></blockquote>
+<dl>
+<dt>responses:</dt><dd><dl>
+<dt>200:</dt><dd><p>description: List of reviews
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: array
+items:</p>
+<blockquote>
+<div><p>$ref: ‘#/components/schemas/Review’</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>400:</dt><dd><p>description: Invalid media type
+content:</p>
+<blockquote>
+<div><dl>
+<dt>application/json:</dt><dd><dl>
+<dt>schema:</dt><dd><p>type: object
+properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>error:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.index">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.app.index" title="Link to this definition">¶</a></dt>
+<dd><p>Renders the main page.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>HTML template.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/:</dt><dd><dl>
+<dt>get:</dt><dd><p>summary: Get main page
+description: Renders the main page of the application.
+responses:</p>
+<blockquote>
+<div><dl>
+<dt>200:</dt><dd><p>description: Main page HTML
+content:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>text/html:</dt><dd><dl class="simple">
+<dt>schema:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.not_found">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">not_found</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.not_found" title="Link to this definition">¶</a></dt>
+<dd><p>Renders the 404 error page.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>e</strong> (<em>Exception</em>) – Error object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(HTML template, status code).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.review_page">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">review_page</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.app.review_page" title="Link to this definition">¶</a></dt>
+<dd><p>Renders the review page.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>HTML template.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+<p>—
+paths:</p>
+<blockquote>
+<div><dl>
+<dt>/review:</dt><dd><dl>
+<dt>get:</dt><dd><p>summary: Get review page
+description: Renders the page for creating reviews.
+responses:</p>
+<blockquote>
+<div><dl>
+<dt>200:</dt><dd><p>description: Review page HTML
+content:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>text/html:</dt><dd><dl class="simple">
+<dt>schema:</dt><dd><p>type: string</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.safe_runtime">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">safe_runtime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detail</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.safe_runtime" title="Link to this definition">¶</a></dt>
+<dd><p>Safely extracts the runtime for a movie or TV show.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>detail</strong> (<em>dict</em>) – TMDB detail data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Runtime in minutes. Returns None if extraction fails.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.server_error">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">server_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.server_error" title="Link to this definition">¶</a></dt>
+<dd><p>Renders the 500 server error page.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>e</strong> (<em>Exception</em>) – Error object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(HTML template, status code).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.app.tmdb_get">
+<span class="sig-prename descclassname"><span class="pre">app.app.</span></span><span class="sig-name descname"><span class="pre">tmdb_get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.app.tmdb_get" title="Link to this definition">¶</a></dt>
+<dd><p>Sends a GET request to the TMDB API and returns the JSON response.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em>) – TMDB API path (e.g., “/movie/123”).</p></li>
+<li><p><strong>extra_params</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional query parameters. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>API response data. Returns None on error.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict or None</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="app-discover-params-module">
-<h2>app.discover_params module<a class="headerlink" href="#app-discover-params-module" title="Link to this heading">¶</a></h2>
+<section id="module-app.discover_params">
+<span id="app-discover-params-module"></span><h2>app.discover_params module<a class="headerlink" href="#module-app.discover_params" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="app.discover_params.DiscoverParams">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.discover_params.</span></span><span class="sig-name descname"><span class="pre">DiscoverParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">genre</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ott</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_by</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'popularity.desc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">genre_operator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'AND'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monetization_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'flatrate'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.discover_params.DiscoverParams" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Data class to manage parameters for the TMDB discover API.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.discover_params.DiscoverParams.genre">
+<span class="sig-name descname"><span class="pre">genre</span></span><a class="headerlink" href="#app.discover_params.DiscoverParams.genre" title="Link to this definition">¶</a></dt>
+<dd><p>Genre ID string (comma or pipe separated).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.discover_params.DiscoverParams.page">
+<span class="sig-name descname"><span class="pre">page</span></span><a class="headerlink" href="#app.discover_params.DiscoverParams.page" title="Link to this definition">¶</a></dt>
+<dd><p>Page number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.discover_params.DiscoverParams.ott">
+<span class="sig-name descname"><span class="pre">ott</span></span><a class="headerlink" href="#app.discover_params.DiscoverParams.ott" title="Link to this definition">¶</a></dt>
+<dd><p>OTT provider ID. Defaults to “”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.discover_params.DiscoverParams.sort_by">
+<span class="sig-name descname"><span class="pre">sort_by</span></span><a class="headerlink" href="#app.discover_params.DiscoverParams.sort_by" title="Link to this definition">¶</a></dt>
+<dd><p>Sorting criteria. Defaults to “popularity.desc”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.discover_params.DiscoverParams.genre_operator">
+<span class="sig-name descname"><span class="pre">genre_operator</span></span><a class="headerlink" href="#app.discover_params.DiscoverParams.genre_operator" title="Link to this definition">¶</a></dt>
+<dd><p>Genre operator (“AND” or “OR”). Defaults to “AND”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.discover_params.DiscoverParams.monetization_type">
+<span class="sig-name descname"><span class="pre">monetization_type</span></span><a class="headerlink" href="#app.discover_params.DiscoverParams.monetization_type" title="Link to this definition">¶</a></dt>
+<dd><p>Monetization type. Defaults to “flatrate”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">genre</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">genre_operator</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'AND'</span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">monetization_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'flatrate'</span></span><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">ott</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></span><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">page</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id4" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">sort_by</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'popularity.desc'</span></span><a class="headerlink" href="#id5" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.discover_params.DiscoverParams.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#app.discover_params.DiscoverParams.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a parameter dictionary to be used for TMDB API requests.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>API parameter dictionary.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="app-media-type-handler-module">
-<h2>app.media_type_handler module<a class="headerlink" href="#app-media-type-handler-module" title="Link to this heading">¶</a></h2>
+<section id="module-app.media_type_handler">
+<span id="app-media-type-handler-module"></span><h2>app.media_type_handler module<a class="headerlink" href="#module-app.media_type_handler" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="app.media_type_handler.MediaTypeHandler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.media_type_handler.</span></span><span class="sig-name descname"><span class="pre">MediaTypeHandler</span></span><a class="headerlink" href="#app.media_type_handler.MediaTypeHandler" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Abstract base class for media type handlers.</p>
+<p>This class defines the interface for handling different media types
+such as movies and TV shows.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="app.media_type_handler.MediaTypeHandler.detail_path_prefix">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">detail_path_prefix</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.media_type_handler.MediaTypeHandler.detail_path_prefix" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="app.media_type_handler.MediaTypeHandler.discover_path">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">discover_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.media_type_handler.MediaTypeHandler.discover_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="app.media_type_handler.MediaTypeHandler.genre_path">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">genre_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.media_type_handler.MediaTypeHandler.genre_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="app.media_type_handler.MediaTypeHandler.provider_path_suffix">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">provider_path_suffix</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.media_type_handler.MediaTypeHandler.provider_path_suffix" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="app.media_type_handler.MediaTypeHandler.value">
+<span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.media_type_handler.MediaTypeHandler.value" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="app.media_type_handler.MovieHandler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.media_type_handler.</span></span><span class="sig-name descname"><span class="pre">MovieHandler</span></span><a class="headerlink" href="#app.media_type_handler.MovieHandler" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#app.media_type_handler.MediaTypeHandler" title="app.media_type_handler.MediaTypeHandler"><code class="xref py py-class docutils literal notranslate"><span class="pre">MediaTypeHandler</span></code></a></p>
+<p>Handler class for processing ‘movie’ media types.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="app.media_type_handler.MovieHandler.value">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.media_type_handler.MovieHandler.value" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="app.media_type_handler.TvHandler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.media_type_handler.</span></span><span class="sig-name descname"><span class="pre">TvHandler</span></span><a class="headerlink" href="#app.media_type_handler.TvHandler" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#app.media_type_handler.MediaTypeHandler" title="app.media_type_handler.MediaTypeHandler"><code class="xref py py-class docutils literal notranslate"><span class="pre">MediaTypeHandler</span></code></a></p>
+<p>Handler class for processing ‘tv’ media types.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="app.media_type_handler.TvHandler.value">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.media_type_handler.TvHandler.value" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.media_type_handler.get_handler">
+<span class="sig-prename descclassname"><span class="pre">app.media_type_handler.</span></span><span class="sig-name descname"><span class="pre">get_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">media_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#app.media_type_handler.MediaTypeHandler" title="app.media_type_handler.MediaTypeHandler"><span class="pre">MediaTypeHandler</span></a></span></span><a class="headerlink" href="#app.media_type_handler.get_handler" title="Link to this definition">¶</a></dt>
+<dd><p>Normalizes the input and returns a handler instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>media_type</strong> (<em>str</em>) – The media type string.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A handler instance for the corresponding media type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#app.media_type_handler.MediaTypeHandler" title="app.media_type_handler.MediaTypeHandler">MediaTypeHandler</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the media_type is not supported.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.media_type_handler.is_valid">
+<span class="sig-prename descclassname"><span class="pre">app.media_type_handler.</span></span><span class="sig-name descname"><span class="pre">is_valid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">media_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#app.media_type_handler.is_valid" title="Link to this definition">¶</a></dt>
+<dd><p>Checks if the media type is valid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>media_type</strong> (<em>str</em>) – The media type to check.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if valid, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.media_type_handler.supported_types">
+<span class="sig-prename descclassname"><span class="pre">app.media_type_handler.</span></span><span class="sig-name descname"><span class="pre">supported_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#app.media_type_handler.supported_types" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a list of supported media types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple of supported media type strings.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[str, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="app-review-repository-module">
-<h2>app.review_repository module<a class="headerlink" href="#app-review-repository-module" title="Link to this heading">¶</a></h2>
+<section id="module-app.review_repository">
+<span id="app-review-repository-module"></span><h2>app.review_repository module<a class="headerlink" href="#module-app.review_repository" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="app.review_repository.ContentKey">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.review_repository.</span></span><span class="sig-name descname"><span class="pre">ContentKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">media_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.review_repository.ContentKey" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Key class used to identify content.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.review_repository.ContentKey.media_type">
+<span class="sig-name descname"><span class="pre">media_type</span></span><a class="headerlink" href="#app.review_repository.ContentKey.media_type" title="Link to this definition">¶</a></dt>
+<dd><p>Media type (“movie” or “tv”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.review_repository.ContentKey.content_id">
+<span class="sig-name descname"><span class="pre">content_id</span></span><a class="headerlink" href="#app.review_repository.ContentKey.content_id" title="Link to this definition">¶</a></dt>
+<dd><p>Content ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">content_id</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#id6" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">media_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id7" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.review_repository.ContentKey.to_key">
+<span class="sig-name descname"><span class="pre">to_key</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#app.review_repository.ContentKey.to_key" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a string key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Key in the format “{media_type}_{content_id}”.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="app.review_repository.ReviewRepository">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.review_repository.</span></span><span class="sig-name descname"><span class="pre">ReviewRepository</span></span><a class="headerlink" href="#app.review_repository.ReviewRepository" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Repository class that stores and manages review data in memory.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.review_repository.ReviewRepository._store">
+<span class="sig-name descname"><span class="pre">_store</span></span><a class="headerlink" href="#app.review_repository.ReviewRepository._store" title="Link to this definition">¶</a></dt>
+<dd><p>Internal storage for review data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, List[Dict[str, Any]]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.review_repository.ReviewRepository.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.review_repository.ContentKey" title="app.review_repository.ContentKey"><span class="pre">ContentKey</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">review</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#app.review_repository.ReviewRepository.add" title="Link to this definition">¶</a></dt>
+<dd><p>Adds a new review to the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<a class="reference internal" href="#app.review_repository.ContentKey" title="app.review_repository.ContentKey"><em>ContentKey</em></a>) – Content key.</p></li>
+<li><p><strong>review</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Review data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The added review (including an assigned ID).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.review_repository.ReviewRepository.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.review_repository.ContentKey" title="app.review_repository.ContentKey"><span class="pre">ContentKey</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">review_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#app.review_repository.ReviewRepository.delete" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes a specific review from the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<a class="reference internal" href="#app.review_repository.ContentKey" title="app.review_repository.ContentKey"><em>ContentKey</em></a>) – Content key.</p></li>
+<li><p><strong>review_id</strong> (<em>int</em>) – ID of the review to delete.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if deletion was successful, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.review_repository.ReviewRepository.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.review_repository.ContentKey" title="app.review_repository.ContentKey"><span class="pre">ContentKey</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#app.review_repository.ReviewRepository.get" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the list of reviews for a specific content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> (<a class="reference internal" href="#app.review_repository.ContentKey" title="app.review_repository.ContentKey"><em>ContentKey</em></a>) – Content key.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of reviews.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="app-tmdb-parser-module">
-<h2>app.tmdb_parser module<a class="headerlink" href="#app-tmdb-parser-module" title="Link to this heading">¶</a></h2>
+<section id="module-app.tmdb_parser">
+<span id="app-tmdb-parser-module"></span><h2>app.tmdb_parser module<a class="headerlink" href="#module-app.tmdb_parser" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="app.tmdb_parser.TmdbParser">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.tmdb_parser.</span></span><span class="sig-name descname"><span class="pre">TmdbParser</span></span><a class="headerlink" href="#app.tmdb_parser.TmdbParser" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Dedicated class for converting TMDB API responses into internal domain models.</p>
+<p>Includes defensive logic for floating-point rounding errors and missing data.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="app.tmdb_parser.TmdbParser.img_url">
+<span class="sig-name descname"><span class="pre">img_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'w500'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#app.tmdb_parser.TmdbParser.img_url" title="Link to this definition">¶</a></dt>
+<dd><p>Converts an image path into a full TMDB image URL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The image path.</p></li>
+<li><p><strong>size</strong> (<em>str</em>) – Image size. Defaults to “w500”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The complete image URL. Returns None if the path is missing.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.tmdb_parser.TmdbParser.parse_cast">
+<span class="sig-name descname"><span class="pre">parse_cast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detail</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#app.tmdb_parser.TmdbParser.parse_cast" title="Link to this definition">¶</a></dt>
+<dd><p>Extracts cast information from the credits data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>detail</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – TMDB detail data (including credits).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of cast members (up to 10).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.tmdb_parser.TmdbParser.parse_detail">
+<span class="sig-name descname"><span class="pre">parse_detail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detail</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">providers_raw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#app.tmdb_parser.TmdbParser.parse_detail" title="Link to this definition">¶</a></dt>
+<dd><p>Transforms content detail into a complete internal format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>content_id</strong> (<em>int</em>) – Content ID.</p></li>
+<li><p><strong>media_type</strong> (<em>str</em>) – Media type.</p></li>
+<li><p><strong>detail</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – TMDB detail data.</p></li>
+<li><p><strong>providers_raw</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Raw provider data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Fully formatted detail data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.tmdb_parser.TmdbParser.parse_genres">
+<span class="sig-name descname"><span class="pre">parse_genres</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detail</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#app.tmdb_parser.TmdbParser.parse_genres" title="Link to this definition">¶</a></dt>
+<dd><p>Extracts genre data as a list of strings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>detail</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – TMDB detail data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of genre names.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.tmdb_parser.TmdbParser.parse_list_item">
+<span class="sig-name descname"><span class="pre">parse_list_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#app.tmdb_parser.TmdbParser.parse_list_item" title="Link to this definition">¶</a></dt>
+<dd><p>Converts a TMDB list item into the internal format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>item</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – TMDB item data.</p></li>
+<li><p><strong>media_type</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Media type. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Formatted data. Returns None if the type is invalid.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.tmdb_parser.TmdbParser.parse_providers">
+<span class="sig-name descname"><span class="pre">parse_providers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">providers_raw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#app.tmdb_parser.TmdbParser.parse_providers" title="Link to this definition">¶</a></dt>
+<dd><p>Converts OTT provider data into the internal format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>providers_raw</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Raw TMDB provider data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of providers (flatrate, buy, rent for KR region).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.tmdb_parser.TmdbParser.parse_reviews">
+<span class="sig-name descname"><span class="pre">parse_reviews</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detail</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#app.tmdb_parser.TmdbParser.parse_reviews" title="Link to this definition">¶</a></dt>
+<dd><p>Converts TMDB review data into the internal format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>detail</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – TMDB detail data (including reviews).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of reviews (up to 5, content limited to 400 chars).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.tmdb_parser.TmdbParser.parse_runtime">
+<span class="sig-name descname"><span class="pre">parse_runtime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detail</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#app.tmdb_parser.TmdbParser.parse_runtime" title="Link to this definition">¶</a></dt>
+<dd><p>Extracts valid runtime by distinguishing between TV (episode_run_time) and Movie (runtime).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>detail</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – TMDB detail data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Runtime in minutes. Returns None if extraction fails.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<section id="module-app">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-app" title="Link to this heading">¶</a></h2>
 </section>
 </section>
 

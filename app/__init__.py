@@ -1,4 +1,4 @@
-from flasgger import Swagger
+# ✅ 이렇게 수정
+from flask import Flask
 
 app = Flask(__name__)
-swagger = Swagger(app)
