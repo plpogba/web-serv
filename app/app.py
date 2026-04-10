@@ -140,6 +140,20 @@ def index():
 
     Returns:
         str: HTML template.
+
+    ---
+    paths:
+      /:
+        get:
+          summary: Get main page
+          description: Renders the main page of the application.
+          responses:
+            200:
+              description: Main page HTML
+              content:
+                text/html:
+                  schema:
+                    type: string
     """
     return render_template("index.html")
 
@@ -149,6 +163,20 @@ def browse():
 
     Returns:
         str: HTML template.
+
+    ---
+    paths:
+      /browse:
+        get:
+          summary: Get browse page
+          description: Renders the browse page for content discovery.
+          responses:
+            200:
+              description: Browse page HTML
+              content:
+                text/html:
+                  schema:
+                    type: string
     """
     return render_template("browse.html")
 
@@ -162,6 +190,40 @@ def content_detail(media_type, content_id):
 
     Returns:
         tuple: (HTML template, status code) or error template.
+
+    ---
+    paths:
+      /content/{media_type}/{content_id}:
+        get:
+          summary: Get content detail page
+          description: Renders the detail page for a specific content item.
+          parameters:
+            - name: media_type
+              in: path
+              required: true
+              schema:
+                type: string
+                enum: [movie, tv]
+              description: Type of media (movie or tv)
+            - name: content_id
+              in: path
+              required: true
+              schema:
+                type: integer
+              description: TMDB content ID
+          responses:
+            200:
+              description: Content detail page HTML
+              content:
+                text/html:
+                  schema:
+                    type: string
+            400:
+              description: Invalid media type
+              content:
+                text/html:
+                  schema:
+                    type: string
     """
     if media_type not in HANDLERS:
         return render_template("error.html", code=400, msg="Invalid content type."), 400
@@ -175,6 +237,20 @@ def review_page():
 
     Returns:
         str: HTML template.
+
+    ---
+    paths:
+      /review:
+        get:
+          summary: Get review page
+          description: Renders the page for creating reviews.
+          responses:
+            200:
+              description: Review page HTML
+              content:
+                text/html:
+                  schema:
+                    type: string
     """
     return render_template("review.html")
 
@@ -188,6 +264,22 @@ def api_trending():
 
     Returns:
         flask.Response: JSON response.
+
+    ---
+    paths:
+      /api/trending:
+        get:
+          summary: Get trending content
+          description: Returns a list of currently trending movies and TV shows.
+          responses:
+            200:
+              description: List of trending content
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContentItem'
     """
     data = tmdb_get("/trending/all/week")
     if not data:
@@ -208,6 +300,79 @@ def api_browse():
 
     Returns:
         flask.Response: JSON response.
+
+    ---
+    paths:
+      /api/browse:
+        get:
+          summary: Browse or search content
+          description: Searches for content or discovers content based on filters.
+          parameters:
+            - name: type
+              in: query
+              schema:
+                type: string
+                enum: [movie, tv]
+                default: movie
+              description: Type of media to browse
+            - name: genre
+              in: query
+              schema:
+                type: string
+              description: Genre ID(s) separated by comma
+            - name: ott
+              in: query
+              schema:
+                type: string
+              description: OTT provider ID
+            - name: q
+              in: query
+              schema:
+                type: string
+              description: Search query string
+            - name: page
+              in: query
+              schema:
+                type: string
+                default: "1"
+              description: Page number
+          responses:
+            200:
+              description: List of content with pagination info
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ContentItem'
+                      total_pages:
+                        type: integer
+            400:
+              description: Invalid media type
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      error:
+                        type: string
+            500:
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                      results:
+                        type: array
+                        items: {}
+                      total_pages:
+                        type: integer
     """
     media_type = request.args.get("type", "movie")
     if media_type not in HANDLERS:
@@ -248,6 +413,61 @@ def api_content_detail(media_type, content_id):
 
     Returns:
         flask.Response: JSON response.
+
+    ---
+    paths:
+      /api/content/{media_type}/{content_id}:
+        get:
+          summary: Get content details
+          description: Returns detailed information for a specific movie or TV show.
+          parameters:
+            - name: media_type
+              in: path
+              required: true
+              schema:
+                type: string
+                enum: [movie, tv]
+              description: Type of media
+            - name: content_id
+              in: path
+              required: true
+              schema:
+                type: integer
+              description: TMDB content ID
+          responses:
+            200:
+              description: Detailed content information
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ContentDetail'
+            400:
+              description: Invalid media type
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      error:
+                        type: string
+            404:
+              description: Content not found
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      error:
+                        type: string
+            500:
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      error:
+                        type: string
     """
     logger.info(f"Requesting content detail: {media_type}/{content_id}")
     try:
@@ -298,6 +518,44 @@ def api_genres(media_type):
 
     Returns:
         flask.Response: JSON response.
+
+    ---
+    paths:
+      /api/genres/{media_type}:
+        get:
+          summary: Get genres for media type
+          description: Returns the list of available genres for movies or TV shows.
+          parameters:
+            - name: media_type
+              in: path
+              required: true
+              schema:
+                type: string
+                enum: [movie, tv]
+              description: Type of media
+          responses:
+            200:
+              description: List of genres
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+            400:
+              description: Invalid media type
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      error:
+                        type: string
     """
     if media_type not in HANDLERS:
         return jsonify({"error": "Invalid media_type"}), 400
@@ -320,6 +578,45 @@ def get_site_reviews(media_type, content_id):
 
     Returns:
         flask.Response: JSON response.
+
+    ---
+    paths:
+      /api/reviews/{media_type}/{content_id}:
+        get:
+          summary: Get site reviews for content
+          description: Returns the list of user reviews for a specific content item.
+          parameters:
+            - name: media_type
+              in: path
+              required: true
+              schema:
+                type: string
+                enum: [movie, tv]
+              description: Type of media
+            - name: content_id
+              in: path
+              required: true
+              schema:
+                type: integer
+              description: TMDB content ID
+          responses:
+            200:
+              description: List of reviews
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+            400:
+              description: Invalid media type
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      error:
+                        type: string
     """
     if media_type not in HANDLERS:
         return jsonify({"error": "Invalid media_type"}), 400
@@ -339,6 +636,68 @@ def create_site_review(media_type, content_id):
 
     Returns:
         flask.Response: JSON response.
+
+    ---
+    paths:
+      /api/reviews/{media_type}/{content_id}:
+        post:
+          summary: Create a new review
+          description: Creates a new user review for a specific content item.
+          parameters:
+            - name: media_type
+              in: path
+              required: true
+              schema:
+                type: string
+                enum: [movie, tv]
+              description: Type of media
+            - name: content_id
+              in: path
+              required: true
+              schema:
+                type: integer
+              description: TMDB content ID
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - author
+                    - text
+                    - rating
+                  properties:
+                    author:
+                      type: string
+                      description: Review author name
+                    text:
+                      type: string
+                      description: Review content
+                    rating:
+                      type: number
+                      minimum: 1
+                      maximum: 5
+                      description: Rating from 1 to 5
+                    ott:
+                      type: string
+                      description: OTT provider name (optional)
+          responses:
+            201:
+              description: Review created successfully
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/Review'
+            400:
+              description: Invalid input or media type
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      error:
+                        type: string
     """
     if media_type not in HANDLERS:
         return jsonify({"error": "Invalid media_type"}), 400
@@ -370,6 +729,61 @@ def delete_site_review(media_type, content_id, review_id):
 
     Returns:
         flask.Response: JSON response.
+
+    ---
+    paths:
+      /api/reviews/{media_type}/{content_id}/{review_id}:
+        delete:
+          summary: Delete a review
+          description: Deletes a specific user review for a content item.
+          parameters:
+            - name: media_type
+              in: path
+              required: true
+              schema:
+                type: string
+                enum: [movie, tv]
+              description: Type of media
+            - name: content_id
+              in: path
+              required: true
+              schema:
+                type: integer
+              description: TMDB content ID
+            - name: review_id
+              in: path
+              required: true
+              schema:
+                type: integer
+              description: Review ID
+          responses:
+            200:
+              description: Review deleted successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+            400:
+              description: Invalid media type
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      error:
+                        type: string
+            404:
+              description: Review not found
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      error:
+                        type: string
     """
     if media_type not in HANDLERS:
         return jsonify({"error": "Invalid media_type"}), 400
