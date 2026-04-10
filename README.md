@@ -19,8 +19,10 @@ proper documentation, and a maintainable codebase that could scale.
 
 ## 🖼️ Demo
 
-> 📸 Screenshots and GIF coming soon.
 
+
+![demo](./assets/cinereview1.gif)
+![demo](./assets/cinereview2.gif)
 ---
 
 ## 🛠️ Tech Stack
