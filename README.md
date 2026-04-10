@@ -110,15 +110,6 @@ pytest tests/
 
 ---
 
-## 💡 Lessons Learned
-
-The most challenging part was designing a clean **Single Source of Truth** for documentation.
-Early on, the API behavior and the docs were out of sync. By integrating Flasgger directly
-into the route docstrings, any change to the code automatically reflected in the Swagger UI —
-eliminating the risk of stale documentation entirely.
-
----
-
 ## 📬 Contact
 
 Feel free to reach out via GitHub Issues or email at <kangjinoo@knu.ac.kr>
